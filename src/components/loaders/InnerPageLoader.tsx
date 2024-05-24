@@ -21,7 +21,7 @@ const InnerPageLoader = ({ loading }: { loading: boolean }) => {
 
           <div className="logger">
             <p className="text-sm text-slate-400">
-              S'il vous plaît, attendez...
+              S&apos;il vous plaît, attendez...
             </p>
           </div>
           {/* loader  */}

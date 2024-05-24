@@ -26,7 +26,7 @@ export const withAuthGuard = <P extends object>(
         router.push({ pathname: "/auth/login", query: router.asPath });
         toast.error("Connectez-vous pour continuer");
       }
-    }, [user, loading, router.asPath]);
+    }, [user, loading, router]);
 
     if (loading || (!user && !error)) {
       return <FullPageLoader />;

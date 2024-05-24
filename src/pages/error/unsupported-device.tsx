@@ -19,8 +19,8 @@ export default function UnsupportedDevice() {
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Erreur</AlertTitle>
         <AlertDescription>
-          Cet appareil n'est pas pris en charge, veuillez utiliser un ordinateur
-          de bureau ou un PC
+          Cet appareil n&apos;est pas pris en charge, veuillez utiliser un
+          ordinateur de bureau ou un PC
         </AlertDescription>
       </Alert>
     </div>
