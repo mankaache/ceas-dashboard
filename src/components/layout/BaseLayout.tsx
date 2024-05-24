@@ -2,36 +2,31 @@ import NextLink from "next/link";
 import { FaArrowRight } from "react-icons/fa";
 import { NextSeo } from "next-seo";
 import React from "react";
-import { useDeviceDimensions } from "@/hooks";
 import { useRouter } from "next/router";
 import Navbar from "./Navbar";
-import FullPageLoader from "../FullPageLoader";
 import SidebarNav from "./SideNav";
-import { useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "@/firebase/config";
 import { withAuthGuard } from "@/hoc";
+import { useDeviceDimensions } from "@/hooks";
 
-type BaseLayoutProps = {
+interface BaseLayoutProps {
   children?: React.ReactNode;
   pageTitle?: string;
   description?: string;
   pageLink?: string;
   sub?: string;
-};
+}
 
-const BaseLayout = ({
+const BaseLayout: React.FC<BaseLayoutProps> = ({
   children,
   pageTitle = "Home",
   sub = "CEAS",
   pageLink,
   description = "Farming",
-}: BaseLayoutProps) => {
-  const [user, loading, error] = useAuthState(auth);
-  const [isMounted, setIsMounted] = React.useState(false);
+}) => {
+  const router = useRouter();
+  const { locale = "fr" } = router;
 
-  console.log(user, loading, error);
-
-  let title: string = pageTitle
+  const title: string = pageTitle
     ? `${pageTitle} | ${process.env.NEXT_PUBLIC_SITE_NAME}`
     : `${process.env.NEXT_PUBLIC_SITE_NAME}`;
 
@@ -41,9 +36,6 @@ const BaseLayout = ({
 
   const themeColor = "#475A23";
 
-  React.useEffect(() => {
-    setIsMounted(true);
-  }, []);
   return (
     <>
       <NextSeo
@@ -69,81 +61,38 @@ const BaseLayout = ({
           handle: `@${process.env.NEXT_PUBLIC_SITE?.split(".")[0]}`,
         }}
         additionalMetaTags={[
-          {
-            name: "keywords",
-            content: "farming",
-          },
+          { name: "keywords", content: "farming" },
           {
             name: "viewport",
             content: "width=device-width, initial-scale=1.0",
           },
-          {
-            name: "revisit-after",
-            content: "5 days",
-          },
+          { name: "revisit-after", content: "5 days" },
           {
             name: "author",
             content: `${process.env.NEXT_PUBLIC_SITE?.split(".")[0]}`,
           },
           {
             name: "language",
-            content: "French",
+            content: (
+              { en: "English", fr: "French" } as { [key: string]: string }
+            )[locale],
           },
-          {
-            name: "http-equiv",
-            content: "text/html; charset=utf-8",
-          },
-
-          // pwa
+          { name: "http-equiv", content: "text/html; charset=utf-8" },
           {
             name: "application-name",
-            // content: title
             content: process.env.NEXT_PUBLIC_SITE_NAME ?? "Tiny Mountain Paws",
           },
-          {
-            name: "apple-mobile-web-app-capable",
-            content: "yes",
-          },
-          // {
-          //   name: 'apple-mobile-web-app-status-bar-style',
-          //   content: 'default',
-          // },
+          { name: "apple-mobile-web-app-capable", content: "yes" },
           {
             name: "apple-mobile-web-app-title",
-            // content: title
             content: process.env.NEXT_PUBLIC_SITE_NAME ?? "",
           },
-          {
-            name: "format-detection",
-            content: "telephone=no",
-          },
-          {
-            name: "mobile-web-app-capable",
-            content: "yes",
-          },
-          // {
-          //   name: 'msapplication-config',
-          //   content: '/icons/browserconfig.xml'
-          // },
-          {
-            name: "msapplication-TileColor",
-            content: themeColor,
-          },
-          {
-            name: "msapplication-tap-highlight",
-            content: "no",
-          },
-
-          {
-            name: "theme-color",
-            content: themeColor,
-          },
-
-          {
-            name: "msapplication-navbutton-color",
-            content: themeColor,
-          },
-
+          { name: "format-detection", content: "telephone=no" },
+          { name: "mobile-web-app-capable", content: "yes" },
+          { name: "msapplication-TileColor", content: themeColor },
+          { name: "msapplication-tap-highlight", content: "no" },
+          { name: "theme-color", content: themeColor },
+          { name: "msapplication-navbutton-color", content: themeColor },
           {
             name: "apple-mobile-web-app-status-bar-style",
             content: themeColor,
@@ -174,40 +123,26 @@ const BaseLayout = ({
             sizes: "144x144",
             href: `${process.env.NEXT_PUBLIC_SITE_URL}/touch-icons/apple-touch-icon-ipad-retina-152x152.png`,
           },
-
-          {
-            rel: "shortcut icon",
-            href: "/favicon.ico",
-          },
-
-          // apple splash screen
-          {
-            rel: "apple-touch-startup-image",
-            href: "/og-image.jpg",
-          },
+          { rel: "shortcut icon", href: "/favicon.ico" },
+          { rel: "apple-touch-startup-image", href: "/og-image.jpg" },
         ]}
       />
       <div className="flex w-screen h-screen items-center justify-center bg-white">
-        {!isMounted ? (
-          <FullPageLoader />
-        ) : (
-          <div className="flex h-full w-full m-0 p-0">
-            <div className="sidebar">
-              <SidebarNav />
-            </div>
-            <div className="dash bg-gray-100 w-full">
-              <div className="">
-                <header>
-                  <Navbar />
-                </header>
-
-                <main id="main" className="relative w-full h-full">
-                  {children}
-                </main>
-              </div>
+        <div className="flex h-full w-full m-0 p-0">
+          <div className="sidebar">
+            <SidebarNav />
+          </div>
+          <div className="dash bg-gray-100 w-full">
+            <div className="">
+              <header>
+                <Navbar />
+              </header>
+              <main id="main" className="relative w-full h-full">
+                {children}
+              </main>
             </div>
           </div>
-        )}
+        </div>
       </div>
     </>
   );
