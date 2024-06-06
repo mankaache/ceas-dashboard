@@ -17,6 +17,7 @@ import {
   MdEvent,
   MdInsertPhoto,
   MdOutlineEvent,
+  MdOutlineVideoCameraBack,
   MdSecurity,
   MdSettings,
 } from "react-icons/md";
@@ -54,6 +55,11 @@ const SidebarNav: React.FC = () => {
       label: "photos",
       href: "/photos",
       icon: <MdInsertPhoto />,
+    },
+    {
+      label: "videos",
+      href: "/videos",
+      icon: <MdOutlineVideoCameraBack />,
     },
     {
       label: "programmes de formation",
