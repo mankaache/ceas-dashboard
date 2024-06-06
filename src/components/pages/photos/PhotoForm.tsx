@@ -32,6 +32,10 @@ import "filepond/dist/filepond.min.css";
 import FilePondPluginImageExifOrientation from "filepond-plugin-image-exif-orientation";
 import FilePondPluginImagePreview from "filepond-plugin-image-preview";
 import "filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css";
+
+import FilePondPluginFileValidateType from "filepond-plugin-file-validate-type";
+// import 'filepond-plugin-file-validate-type/dist/filepond-plugin-file-validate-type.min.css';
+
 import { ActualFileObject, FilePondFile } from "filepond";
 import { Input } from "@/components/ui/input";
 
@@ -44,6 +48,8 @@ import {
   serverTimestamp,
   Timestamp,
   QueryDocumentSnapshot,
+  doc,
+  setDoc,
 } from "firebase/firestore";
 
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
@@ -52,7 +58,11 @@ import dayjs from "dayjs";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 
-registerPlugin(FilePondPluginImageExifOrientation, FilePondPluginImagePreview);
+registerPlugin(
+  FilePondPluginImageExifOrientation,
+  FilePondPluginImagePreview,
+  FilePondPluginFileValidateType
+);
 
 const photoSchema = z.object({
   src: z
@@ -60,7 +70,7 @@ const photoSchema = z.object({
     .url({ message: "Invalid url" }),
   caption: z
     .string({ message: "Caption is required" })
-    .min(1, "Caption should me atleast 1 character"),
+    .min(1, "Caption should be atleast 1 character"),
 });
 
 // Photo Form Component
@@ -82,6 +92,18 @@ export const PhotoForm: React.FC<{
   //     },
   //   ],
   // });
+
+  // const initialRemoteFile = {
+  //   // source: "https://example.com/path/to/your/image.jpg", // Replace with your remote image URL
+  //   source: photo?.data().src,
+  //   options: {
+  //     type: "remote",
+  //     // file: {
+  //     //   name: "Remote Image",
+  //     //   type: "image/jpeg",
+  //     // },
+  //   },
+  // };
 
   const [files, setFiles] = React.useState<File[]>([]);
 
@@ -157,10 +179,20 @@ export const PhotoForm: React.FC<{
   // );
 
   const handleFileChange = (fileItems: any) => {
-    console.log(fileItems, URL.createObjectURL(fileItems[0].file));
-    setFiles(fileItems);
     if (fileItems.length > 0) {
-      form.setValue("src", URL.createObjectURL(fileItems[0].file));
+      // console.log(
+      //   fileItems,
+      //   typeof fileItems[0] == "string"
+      //     ? fileItems[0]
+      //     : URL.createObjectURL(fileItems[0].file)
+      // );
+      setFiles(fileItems);
+      form.setValue(
+        "src",
+        typeof fileItems[0] == "string"
+          ? fileItems[0]
+          : URL.createObjectURL(fileItems[0].file)
+      );
     }
 
     // else {
@@ -181,9 +213,9 @@ export const PhotoForm: React.FC<{
     });
   };
 
-  const onSubmit = async (data: { src: string; caption: string }) => {
-    console.log(data);
-    console.log(files);
+  const onSubmitAdd = async (data: { src: string; caption: string }) => {
+    // console.log(data);
+    // console.log(files);
 
     if (Boolean(files.length)) {
       try {
@@ -196,7 +228,7 @@ export const PhotoForm: React.FC<{
           src: url,
           caption: data.caption,
           createdAt: dayjs().format("YYYY-MM-DD hh:mm A"),
-          modifiedAt: null,
+          modifiedAt: dayjs().format("YYYY-MM-DD hh:mm A"),
           status: "active",
         });
 
@@ -212,7 +244,7 @@ export const PhotoForm: React.FC<{
         }
       } catch (err) {
         Swal.fire({
-          title: "Error logging you in!",
+          title: "Erreur",
           html: getError("html", err),
           icon: "error",
           confirmButtonText: "Fermer",
@@ -223,9 +255,53 @@ export const PhotoForm: React.FC<{
     }
   };
 
-  React.useEffect(() => {
-    console.log(files);
-  }, [files]);
+  const onSubmitEdit = async (data: { src: string; caption: string }) => {
+    if (!(photo || Boolean(files.length))) {
+      toast.error("No file present!");
+    } else {
+      try {
+        Swal.fire("S'il vous plaît, attendez...");
+        Swal.showLoading(Swal.getConfirmButton());
+
+        const url = !Boolean(files.length)
+          ? photo?.data().src
+          : // @ts-ignore
+            await handleFileUpload(files[0].file);
+
+        const photoRef = doc(firestore, "photos", photo!.id);
+        const photoData = {
+          src: url,
+          caption: data.caption,
+          createdAt: photo?.data().createdAt,
+          modifiedAt: dayjs().format("YYYY-MM-DD hh:mm A"),
+          status: "active",
+        };
+        await setDoc(photoRef, photoData, { merge: true });
+
+        const swalRes = await Swal.fire({
+          title: "Succès!",
+          // text: result.message ?? "You're logged in!",
+          icon: "success",
+          confirmButtonText: "Continuer",
+        });
+
+        if (swalRes.value) {
+          onSave();
+        }
+      } catch (err) {
+        Swal.fire({
+          title: "Erreur",
+          html: getError("html", err),
+          icon: "error",
+          confirmButtonText: "Fermer",
+        });
+      }
+    }
+  };
+
+  // React.useEffect(() => {
+  //   // console.log(files);
+  // }, [files]);
 
   return (
     <motion.div
@@ -314,7 +390,7 @@ export const PhotoForm: React.FC<{
             <form
               noValidate
               // @ts-ignore
-              onSubmit={form.handleSubmit(onSubmit)}
+              onSubmit={form.handleSubmit(photo ? onSubmitEdit : onSubmitAdd)}
               className="space-y-8"
             >
               <FormField
@@ -329,6 +405,7 @@ export const PhotoForm: React.FC<{
                         onupdatefiles={handleFileChange}
                         allowMultiple={false}
                         maxFiles={1}
+                        acceptedFileTypes={["image/*"]}
                         instantUpload={false}
                         allowProcess={false}
                         // name="file"
@@ -336,7 +413,7 @@ export const PhotoForm: React.FC<{
                         dropValidation
                         // @ts-ignore
                         credits={null}
-                        labelIdle='Drag & Drop your files or <span class="filepond--label-action">Browse</span>'
+                        labelIdle='Glissez-déposez vos fichiers image ou <span class="filepond--label-action">Navigateur</span>'
                       />
                     </FormControl>
                     <FormMessage />
