@@ -34,10 +34,16 @@ import { MdDelete, MdEdit } from "react-icons/md";
 import { IPhoto } from "@/models";
 import { motion } from "framer-motion";
 import { useCollection } from "react-firebase-hooks/firestore";
-import { DocumentSnapshot, collection } from "firebase/firestore";
+import {
+  DocumentSnapshot,
+  collection,
+  orderBy,
+  query,
+} from "firebase/firestore";
 import { firestore } from "@/firebase/config";
 import { InnerPageLoader } from "@/components/loaders";
 import dynamic from "next/dynamic";
+import { InnerPageError } from "@/components/errors";
 
 const DeletePhoto = dynamic(
   () => import("@/components/pages/photos").then((mod) => mod.DeletePhoto),
@@ -48,15 +54,20 @@ export const PhotoList: React.FC<{
   onEditClick: (photo?: DocumentSnapshot<IPhoto>) => void;
   onDeleteClick: (photo: DocumentSnapshot<IPhoto>) => void;
 }> = ({ onDeleteClick, onEditClick }) => {
-  const [value, loading, error] = useCollection(
+  const photosQuery = query(
     collection(firestore, "photos"),
-    {
-      snapshotListenOptions: { includeMetadataChanges: true },
-    }
+    orderBy("createdAt", "desc")
   );
+  const [value, loading, error] = useCollection(photosQuery, {
+    snapshotListenOptions: { includeMetadataChanges: false },
+  });
 
   if (loading) {
     return <InnerPageLoader loading={loading} />;
+  }
+
+  if (error) {
+    return <InnerPageError error={error} />;
   }
 
   return (
@@ -67,28 +78,31 @@ export const PhotoList: React.FC<{
       transition={{ duration: 0.3 }}
       className="w-full"
     >
-      {!Boolean(value?.docs.length) ? (
-        <p className="text-3xl">Pas des photos</p>
-      ) : (
-        <Card className="w-full fade-enter fade-enter-active">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div className="title">
-              <CardTitle>Photos</CardTitle>
-              <CardDescription>Gérer et afficher vos photos</CardDescription>
-            </div>
+      <Card className="w-full fade-enter fade-enter-active">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div className="title">
+            <CardTitle>Photos</CardTitle>
+            <CardDescription>Gérer et afficher vos photos</CardDescription>
+          </div>
 
-            <div className="add mr-4">
-              <Button
-                type="button"
-                variant="default"
-                onClick={() => onEditClick()}
-                className="flex gap-2 items-center justify-center"
-              >
-                <PlusCircle />
-                Ajouter une photo
-              </Button>
-            </div>
-          </CardHeader>
+          <div className="add mr-4">
+            <Button
+              type="button"
+              variant="default"
+              onClick={() => onEditClick()}
+              className="flex gap-2 items-center justify-center"
+            >
+              <PlusCircle />
+              Ajouter une photo
+            </Button>
+          </div>
+        </CardHeader>
+
+        {!Boolean(value?.docs.length) ? (
+          <div className="mx-auto my-4 w-full flex items-center justify-center">
+            <p className="text-3xl p-4">Pas des photos</p>
+          </div>
+        ) : (
           <CardContent>
             <Table>
               <TableHeader>
@@ -98,7 +112,7 @@ export const PhotoList: React.FC<{
                   </TableHead>
                   <TableHead className="text-center">Légende</TableHead>
                   <TableHead className="text-center">Statut</TableHead>
-                  <TableHead className="text-center">Créé à</TableHead>
+                  <TableHead className="text-center">Modifié à</TableHead>
                   <TableHead className="text-center">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -138,7 +152,7 @@ export const PhotoList: React.FC<{
                     </TableCell>
 
                     <TableCell className="hidden md:table-cell">
-                      {photo.data().createdAt}
+                      {photo.data().modifiedAt}
                     </TableCell>
                     <TableCell>
                       {/* <DropdownMenu>
@@ -181,13 +195,13 @@ export const PhotoList: React.FC<{
               </TableBody>
             </Table>
           </CardContent>
-          {/* <CardFooter>
+        )}
+        {/* <CardFooter>
           <div className="text-xs text-muted-foreground">
             Showing <strong>1-10</strong> of <strong>32</strong> products
           </div>
         </CardFooter> */}
-        </Card>
-      )}
+      </Card>
     </motion.div>
   );
 };
