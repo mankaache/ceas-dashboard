@@ -132,7 +132,7 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({
           <div className="sidebar">
             <SidebarNav />
           </div>
-          <div className="dash bg-gray-100 w-full">
+          <div className="dash bg-gray-100 w-full max-w-[calc(100vw-250px)]">
             <div className="">
               <header>
                 <Navbar />
