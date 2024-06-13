@@ -20,8 +20,16 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 import { cn } from "@/lib/utils";
-import { IPhoto } from "@/models";
+import { ICategory, IPhoto } from "@/models";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -50,6 +58,8 @@ import {
   QueryDocumentSnapshot,
   doc,
   setDoc,
+  query,
+  orderBy,
 } from "firebase/firestore";
 
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
@@ -57,6 +67,8 @@ import { getError, getFilePath } from "@/utils";
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
+import { useCollection } from "react-firebase-hooks/firestore";
+import { addSubcategory, getSubcategories } from "@/firebase/helpers";
 
 registerPlugin(
   FilePondPluginImageExifOrientation,
@@ -64,14 +76,36 @@ registerPlugin(
   FilePondPluginFileValidateType
 );
 
-const photoSchema = z.object({
-  src: z
-    .string({ message: "Please select a file" })
-    .url({ message: "Invalid url" }),
-  caption: z
-    .string({ message: "Caption is required" })
-    .min(1, "Caption should be atleast 1 character"),
-});
+// const photoSchema = z.object({
+//   src: z
+//     .string({ message: "Please select a file" })
+//     .url({ message: "Invalid url" }),
+//   caption: z
+//     .string({ message: "Caption is required" })
+//     .min(1, "Caption should be atleast 1 character"),
+//   category: z.string({ message: "Category is required" }),
+//   custom_category: z.string().optional(),
+// });
+
+const photoSchema = z
+  .object({
+    src: z
+      .string({ message: "Please select a file" })
+      .url({ message: "Invalid url" }),
+    caption: z
+      .string({ message: "Caption is required" })
+      .min(1, { message: "Caption should be at least 1 character" }),
+    category: z.string().optional(),
+    custom_category: z.string().optional(),
+  })
+  .refine((data) => data.category || data.custom_category, {
+    message: "Either Category or Custom Category is required",
+    path: ["category"], // This indicates where the error message will be displayed
+  })
+  .refine((data) => !(data.category && data.custom_category), {
+    message: "Only one of Category or Custom Category should be provided",
+    path: ["category"], // This indicates where the error message will be displayed
+  });
 
 // Photo Form Component
 export const PhotoForm: React.FC<{
@@ -109,10 +143,16 @@ export const PhotoForm: React.FC<{
 
   const [uploadFile, uploading, upLoadSnapshot, error] = useUploadFile();
   const [value, loading, dError] = useDownloadURL(storageRef);
+  // const [categories, catLoading, catError] = useCollection(catQuery);
+  const [categories, catLoading, catError] = getSubcategories("photos");
 
-  const form = useForm({
+  const form = useForm<z.infer<typeof photoSchema>>({
     defaultValues: photo
-      ? { src: photo.data().src, caption: photo.data().caption }
+      ? {
+          src: photo.data().src,
+          caption: photo.data().caption,
+          category: photo.data().category,
+        }
       : {},
     resolver: zodResolver(photoSchema),
   });
@@ -213,7 +253,7 @@ export const PhotoForm: React.FC<{
     });
   };
 
-  const onSubmitAdd = async (data: { src: string; caption: string }) => {
+  const onSubmitAdd = async (data: z.infer<typeof photoSchema>) => {
     // console.log(data);
     // console.log(files);
 
@@ -221,6 +261,13 @@ export const PhotoForm: React.FC<{
       try {
         Swal.fire("S'il vous plaît, attendez...");
         Swal.showLoading(Swal.getConfirmButton());
+
+        if (data.custom_category) {
+          await addSubcategory("photos", {
+            label: data.custom_category,
+            value: data.custom_category,
+          });
+        }
 
         // @ts-ignore
         const url = await handleFileUpload(files[0].file);
@@ -230,6 +277,7 @@ export const PhotoForm: React.FC<{
           createdAt: dayjs().format("YYYY-MM-DD hh:mm A"),
           modifiedAt: dayjs().format("YYYY-MM-DD hh:mm A"),
           status: "active",
+          category: data.category ?? data.custom_category,
         });
 
         const swalRes = await Swal.fire({
@@ -255,13 +303,20 @@ export const PhotoForm: React.FC<{
     }
   };
 
-  const onSubmitEdit = async (data: { src: string; caption: string }) => {
+  const onSubmitEdit = async (data: z.infer<typeof photoSchema>) => {
     if (!(photo || Boolean(files.length))) {
       toast.error("No file present!");
     } else {
       try {
         Swal.fire("S'il vous plaît, attendez...");
         Swal.showLoading(Swal.getConfirmButton());
+
+        if (data.custom_category) {
+          await addSubcategory("photos", {
+            label: data.custom_category,
+            value: data.custom_category,
+          });
+        }
 
         const url = !Boolean(files.length)
           ? photo?.data().src
@@ -275,6 +330,7 @@ export const PhotoForm: React.FC<{
           createdAt: photo?.data().createdAt,
           modifiedAt: dayjs().format("YYYY-MM-DD hh:mm A"),
           status: "active",
+          category: data.category ?? data.custom_category,
         };
         await setDoc(photoRef, photoData, { merge: true });
 
@@ -458,6 +514,53 @@ export const PhotoForm: React.FC<{
                 </FormItem>
               )}
             /> */}
+
+              <FormField
+                name="category"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <FormControl>
+                      <Select
+                        {...field}
+                        // value={field.value}
+                        onValueChange={(v) => form.setValue("category", v)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories?.docs.map((category, idx) => (
+                            <SelectItem key={idx} value={category.data().value}>
+                              {category.data().label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                name="custom_category"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Custom Category</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="text"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <div className="flex justify-end gap-2">
                 <Button type="button" onClick={onCancel} variant="secondary">
