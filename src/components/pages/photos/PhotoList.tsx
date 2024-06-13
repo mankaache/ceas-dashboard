@@ -103,14 +103,15 @@ export const PhotoList: React.FC<{
             <p className="text-3xl p-4">Pas des photos</p>
           </div>
         ) : (
-          <CardContent>
-            <Table>
+          <CardContent className="max-w-full overflow-x-auto">
+            <Table className="table-auto min-w-full text-center">
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-center hidden w-[100px] sm:table-cell">
                     Aperçu
                   </TableHead>
                   <TableHead className="text-center">Légende</TableHead>
+                  <TableHead className="text-center">Catégorie</TableHead>
                   <TableHead className="text-center">Statut</TableHead>
                   <TableHead className="text-center">Modifié à</TableHead>
                   <TableHead className="text-center">Actions</TableHead>
@@ -135,8 +136,11 @@ export const PhotoList: React.FC<{
                         width="64"
                       />
                     </TableCell>
-                    <TableCell className="font-medium max-w-sm">
+                    <TableCell className="font-medium min-w-[250px] max-w-sm">
                       {photo.data().caption}
+                    </TableCell>
+                    <TableCell className="font-medium min-w-[150px] max-w-sm">
+                      {photo.data().category}
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -151,7 +155,7 @@ export const PhotoList: React.FC<{
                       </Badge>
                     </TableCell>
 
-                    <TableCell className="hidden md:table-cell">
+                    <TableCell className="hidden md:table-cell min-w-[180px] max-w-sm">
                       {photo.data().modifiedAt}
                     </TableCell>
                     <TableCell>

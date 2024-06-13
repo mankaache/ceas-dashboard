@@ -97,8 +97,8 @@ export const DocumentList: React.FC<{
             <p className="text-3xl p-4">Pas des documents</p>
           </div>
         ) : (
-          <CardContent>
-            <Table>
+          <CardContent className="max-w-full overflow-x-auto">
+            <Table className="table-auto min-w-full text-center">
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-center hidden w-[100px] sm:table-cell">
@@ -106,6 +106,7 @@ export const DocumentList: React.FC<{
                   </TableHead>
                   <TableHead className="text-center">Titre</TableHead>
                   <TableHead className="text-center">Description</TableHead>
+                  <TableHead className="text-center">Catégorie</TableHead>
                   <TableHead className="text-center">Statut</TableHead>
                   {/* <TableHead className="text-center">Créé à</TableHead> */}
                   <TableHead className="text-center">Modifié à</TableHead>
@@ -126,11 +127,14 @@ export const DocumentList: React.FC<{
                         <IoDocumentTextOutline color="#AB0000" size={50} />
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium max-w-sm">
+                    <TableCell className="font-medium min-w-[250px] max-w-sm">
                       {document.data().title}
                     </TableCell>
-                    <TableCell className="font-medium max-w-sm">
+                    <TableCell className="font-medium min-w-[250px] max-w-sm">
                       {document.data().description}
+                    </TableCell>
+                    <TableCell className="font-medium min-w-[150px] max-w-sm">
+                      {document.data().category}
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -145,7 +149,7 @@ export const DocumentList: React.FC<{
                       </Badge>
                     </TableCell>
 
-                    <TableCell className="hidden md:table-cell">
+                    <TableCell className="hidden md:table-cell min-w-[180px] max-w-sm">
                       {document.data().modifiedAt}
                     </TableCell>
                     <TableCell>
@@ -188,6 +192,7 @@ export const DocumentList: React.FC<{
                 ))}
               </TableBody>
             </Table>
+            {/* </div> */}
           </CardContent>
         )}
         {/* <CardFooter>
