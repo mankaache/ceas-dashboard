@@ -28,7 +28,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { BaseLayout } from "@/components/layout";
-import { PHOTOS } from "@/data";
+import { CONSTANTS, PHOTOS } from "@/data";
 import { cn } from "@/lib/utils";
 import { MdDelete, MdEdit } from "react-icons/md";
 import { IPhoto } from "@/models";
@@ -44,6 +44,7 @@ import { firestore } from "@/firebase/config";
 import { InnerPageLoader } from "@/components/loaders";
 import dynamic from "next/dynamic";
 import { InnerPageError } from "@/components/errors";
+import dayjs from "dayjs";
 
 const DeletePhoto = dynamic(
   () => import("@/components/pages/photos").then((mod) => mod.DeletePhoto),
@@ -156,7 +157,9 @@ export const PhotoList: React.FC<{
                     </TableCell>
 
                     <TableCell className="hidden md:table-cell min-w-[180px] max-w-sm">
-                      {photo.data().modifiedAt}
+                      {dayjs(photo.data().modifiedAt).format(
+                        CONSTANTS.DAYJS_FORMAT
+                      )}
                     </TableCell>
                     <TableCell>
                       {/* <DropdownMenu>
