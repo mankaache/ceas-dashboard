@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useLayoutEffect, useState } from "react";
 
 export const useScreenSize = () => {
   const [isMobile, setIsMobile] = useState(false);
@@ -8,17 +8,17 @@ export const useScreenSize = () => {
   const [isXxl, setIsXxl] = useState(false);
 
   const checkScreenSize = () => {
-    const mobileMediaQuery = window.matchMedia('(max-width: 575px)');
+    const mobileMediaQuery = window.matchMedia("(max-width: 575px)");
     const smMediaQuery = window.matchMedia(
-      '(min-width: 576px) and (max-width: 767px)'
+      "(min-width: 576px) and (max-width: 767px)"
     );
     const mdMediaQuery = window.matchMedia(
-      '(min-width: 768px) and (max-width: 991px)'
+      "(min-width: 768px) and (max-width: 991px)"
     );
     const xlMediaQuery = window.matchMedia(
-      '(min-width: 992px) and (max-width: 1199px)'
+      "(min-width: 992px) and (max-width: 1199px)"
     );
-    const xxlMediaQuery = window.matchMedia('(min-width: 1200px)');
+    const xxlMediaQuery = window.matchMedia("(min-width: 1200px)");
 
     setIsMobile(mobileMediaQuery.matches);
     setIsSm(smMediaQuery.matches);
@@ -27,12 +27,12 @@ export const useScreenSize = () => {
     setIsXxl(xxlMediaQuery.matches);
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     checkScreenSize();
-    window.addEventListener('resize', checkScreenSize);
+    window.addEventListener("resize", checkScreenSize);
 
     return () => {
-      window.removeEventListener('resize', checkScreenSize);
+      window.removeEventListener("resize", checkScreenSize);
     };
   }, []);
 
