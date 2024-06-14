@@ -174,8 +174,8 @@ export const VideoForm: React.FC<{
           src: url,
           title: data.title,
           description: data.description,
-          createdAt: dayjs().format("YYYY-MM-DD hh:mm A"),
-          modifiedAt: dayjs().format("YYYY-MM-DD hh:mm A"),
+          createdAt: dayjs().toISOString(),
+          modifiedAt: dayjs().toISOString(),
           status: "active",
           category: data.category ?? data.custom_category,
         };
@@ -231,7 +231,7 @@ export const VideoForm: React.FC<{
           title: data.title,
           description: data.description,
           createdAt: video?.data().createdAt,
-          modifiedAt: dayjs().format("YYYY-MM-DD hh:mm A"),
+          modifiedAt: dayjs().toISOString(),
           status: "active",
           category: data.category ?? data.custom_category,
         };
