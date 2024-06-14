@@ -14,6 +14,7 @@ import { HiUsers } from "react-icons/hi";
 import { BsFillCreditCardFill } from "react-icons/bs";
 import {
   MdBusiness,
+  MdCategory,
   MdEvent,
   MdInsertPhoto,
   MdOutlineEvent,
@@ -38,33 +39,28 @@ const SidebarNav: React.FC = () => {
     {
       label: "Tableau de bord",
       href: "/",
-      icon: <BiSolidDashboard />,
+      icon: <BiSolidDashboard size={25} />,
     },
 
     {
       label: "articles",
       href: "/articles",
-      icon: <ImNewspaper />,
+      icon: <ImNewspaper size={25} />,
     },
     {
       label: "documents",
       href: "/documents",
-      icon: <IoDocumentTextOutline />,
+      icon: <IoDocumentTextOutline size={25} />,
     },
     {
       label: "photos",
       href: "/photos",
-      icon: <MdInsertPhoto />,
+      icon: <MdInsertPhoto size={25} />,
     },
     {
       label: "videos",
       href: "/videos",
-      icon: <MdOutlineVideoCameraBack />,
-    },
-    {
-      label: "programmes de formation",
-      href: "/training-programs",
-      icon: <FaBriefcase />,
+      icon: <MdOutlineVideoCameraBack size={25} />,
     },
     {
       label: "événements",
@@ -72,10 +68,20 @@ const SidebarNav: React.FC = () => {
       icon: <MdOutlineEvent />,
     },
     {
-      label: "utilisateurs",
-      href: "/users",
-      icon: <HiUsers />,
+      label: "programmes de formation",
+      href: "/training-programs",
+      icon: <FaBriefcase size={25} />,
     },
+    {
+      label: "Catégories",
+      href: "/categories",
+      icon: <MdCategory size={25} />,
+    },
+    // {
+    //   label: "utilisateurs",
+    //   href: "/users",
+    //   icon: <HiUsers size={25} />,
+    // },
   ];
 
   const [toggled, setToggled] = React.useState(false);
