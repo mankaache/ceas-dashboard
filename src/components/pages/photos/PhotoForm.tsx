@@ -68,7 +68,11 @@ import dayjs from "dayjs";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import { useCollection } from "react-firebase-hooks/firestore";
-import { addSubcategory, getSubcategories } from "@/firebase/helpers";
+import {
+  addSubcategory,
+  findSubcategoryByLabel,
+  getSubcategories,
+} from "@/firebase/helpers";
 
 registerPlugin(
   FilePondPluginImageExifOrientation,
@@ -269,13 +273,20 @@ export const PhotoForm: React.FC<{
           });
         }
 
+        // TODO: solve denormalization problem related to static data
+
+        // const category = await findSubcategoryByLabel(
+        //   "photos",
+        //   (data.category ?? data.custom_category) as string
+        // );
+
         // @ts-ignore
         const url = await handleFileUpload(files[0].file);
         const docRef = await addDoc(collection(firestore, "photos"), {
           src: url,
           caption: data.caption,
-          createdAt: dayjs().format("YYYY-MM-DD hh:mm A"),
-          modifiedAt: dayjs().format("YYYY-MM-DD hh:mm A"),
+          createdAt: dayjs().toISOString(),
+          modifiedAt: dayjs().toISOString(),
           status: "active",
           category: data.category ?? data.custom_category,
         });
@@ -328,7 +339,7 @@ export const PhotoForm: React.FC<{
           src: url,
           caption: data.caption,
           createdAt: photo?.data().createdAt,
-          modifiedAt: dayjs().format("YYYY-MM-DD hh:mm A"),
+          modifiedAt: dayjs().toISOString(),
           status: "active",
           category: data.category ?? data.custom_category,
         };
@@ -515,52 +526,61 @@ export const PhotoForm: React.FC<{
               )}
             /> */}
 
-              <FormField
-                name="category"
-                control={form.control}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <FormControl>
-                      <Select
-                        {...field}
-                        // value={field.value}
-                        onValueChange={(v) => form.setValue("category", v)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories?.docs.map((category, idx) => (
-                            <SelectItem key={idx} value={category.data().value}>
-                              {category.data().label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="w-full flex flex-wrap items-stretch justify-center gap-4">
+                <div className="category flex-1">
+                  <FormField
+                    name="category"
+                    control={form.control}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Catégorie</FormLabel>
+                        <FormControl>
+                          <Select
+                            {...field}
+                            value={field.value}
+                            onValueChange={(v) => form.setValue("category", v)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {categories?.docs.map((category, idx) => (
+                                <SelectItem
+                                  key={idx}
+                                  value={category.data().value}
+                                >
+                                  {category.data().label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-              <FormField
-                name="custom_category"
-                control={form.control}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Custom Category</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="text"
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <div className="custom-category flex-1">
+                  <FormField
+                    name="custom_category"
+                    control={form.control}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Catégorie Personnalisée</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="text"
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
 
               <div className="flex justify-end gap-2">
                 <Button type="button" onClick={onCancel} variant="secondary">
