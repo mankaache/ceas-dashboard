@@ -36,6 +36,8 @@ import { firestore } from "@/firebase/config";
 import { InnerPageLoader } from "@/components/loaders";
 import dynamic from "next/dynamic";
 import { InnerPageError } from "@/components/errors";
+import dayjs from "dayjs";
+import { CONSTANTS } from "@/data";
 
 const DeleteVideo = dynamic(
   () => import("@/components/pages/videos").then((mod) => mod.DeleteVideo),
@@ -169,7 +171,9 @@ export const VideoList: React.FC<{
                     </TableCell>
 
                     <TableCell className="hidden md:table-cell min-w-[180px] max-w-sm">
-                      {video.data().modifiedAt}
+                      {dayjs(video.data().modifiedAt).format(
+                        CONSTANTS.DAYJS_FORMAT
+                      )}
                     </TableCell>
                     <TableCell>
                       {/* <DropdownMenu>
