@@ -9,8 +9,12 @@ export default function UnsupportedDevice() {
   const { isXl, isXxl } = useScreenSize();
   const router = useRouter();
 
+  const {
+    query: { next },
+  } = router;
+
   React.useEffect(() => {
-    if (isXl || isXxl) router.push("/");
+    if (isXl || isXxl) router.push((next as string) ?? "/");
   }, [isXl, isXxl, router]);
 
   return (

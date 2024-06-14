@@ -1,6 +1,6 @@
 import React from "react";
 import Image from "next/image";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,17 +8,10 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 import {
   Table,
   TableBody,
@@ -27,11 +20,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { BaseLayout } from "@/components/layout";
-import { CONSTANTS, PHOTOS } from "@/data";
+
 import { cn } from "@/lib/utils";
-import { MdDelete, MdEdit } from "react-icons/md";
-import { IPhoto } from "@/models";
+import { MdEdit } from "react-icons/md";
+import { ITrainingProgram } from "@/models";
 import { motion } from "framer-motion";
 import { useCollection } from "react-firebase-hooks/firestore";
 import {
@@ -44,22 +36,28 @@ import { firestore } from "@/firebase/config";
 import { InnerPageLoader } from "@/components/loaders";
 import dynamic from "next/dynamic";
 import { InnerPageError } from "@/components/errors";
+import { IoDocumentTextOutline } from "react-icons/io5";
 import dayjs from "dayjs";
+import { CONSTANTS } from "@/data";
+import { format } from "date-fns";
 
-const DeletePhoto = dynamic(
-  () => import("@/components/pages/photos").then((mod) => mod.DeletePhoto),
+const DeleteTrainingProgram = dynamic(
+  () =>
+    import("@/components/pages/training-programs").then(
+      (mod) => mod.DeleteTrainingProgram
+    ),
   { ssr: false }
 );
 
-export const PhotoList: React.FC<{
-  onEditClick: (photo?: DocumentSnapshot<IPhoto>) => void;
-  onDeleteClick: (photo: DocumentSnapshot<IPhoto>) => void;
+export const TrainingProgramList: React.FC<{
+  onEditClick: (trainingProgram?: DocumentSnapshot<ITrainingProgram>) => void;
+  onDeleteClick: (trainingProgram: DocumentSnapshot<ITrainingProgram>) => void;
 }> = ({ onDeleteClick, onEditClick }) => {
-  const photosQuery = query(
-    collection(firestore, "photos"),
-    orderBy("createdAt", "desc")
+  const trainingProgramsQuery = query(
+    collection(firestore, "training-programs"),
+    orderBy("modifiedAt", "desc")
   );
-  const [value, loading, error] = useCollection(photosQuery, {
+  const [value, loading, error] = useCollection(trainingProgramsQuery, {
     snapshotListenOptions: { includeMetadataChanges: false },
   });
 
@@ -82,8 +80,10 @@ export const PhotoList: React.FC<{
       <Card className="w-full fade-enter fade-enter-active">
         <CardHeader className="flex flex-row items-center justify-between">
           <div className="title">
-            <CardTitle>Photos</CardTitle>
-            <CardDescription>Gérer et afficher vos photos</CardDescription>
+            <CardTitle>Programmes de formation</CardTitle>
+            <CardDescription>
+              Gérer et afficher vos programmes de formation
+            </CardDescription>
           </div>
 
           <div className="add mr-4">
@@ -94,14 +94,14 @@ export const PhotoList: React.FC<{
               className="flex gap-2 items-center justify-center"
             >
               <PlusCircle />
-              Ajouter une photo
+              Ajouter un programme de formation
             </Button>
           </div>
         </CardHeader>
 
         {!Boolean(value?.docs.length) ? (
           <div className="mx-auto my-4 w-full flex items-center justify-center">
-            <p className="text-3xl p-4">Pas des photos</p>
+            <p className="text-3xl p-4">Pas de programmes de formation</p>
           </div>
         ) : (
           <CardContent className="max-w-full overflow-x-auto">
@@ -111,17 +111,23 @@ export const PhotoList: React.FC<{
                   <TableHead className="text-center hidden w-[100px] sm:table-cell">
                     Aperçu
                   </TableHead>
-                  <TableHead className="text-center">Légende</TableHead>
+                  <TableHead className="text-center">Titre</TableHead>
+                  <TableHead className="text-center">Extrait</TableHead>
+                  <TableHead className="text-center">Lieu</TableHead>
+                  <TableHead className="text-center">Date</TableHead>
                   <TableHead className="text-center">Catégorie</TableHead>
+                  <TableHead className="text-center">Étiqueter</TableHead>
+                  {/* <TableHead className="text-center">Auteur</TableHead> */}
                   <TableHead className="text-center">Statut</TableHead>
+                  {/* <TableHead className="text-center">Créé à</TableHead> */}
                   <TableHead className="text-center">Modifié à</TableHead>
                   <TableHead className="text-center">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {value?.docs.map((photo, idx) => (
+                {value?.docs.map((trainingProgram, idx) => (
                   <TableRow
-                    key={photo.id}
+                    key={trainingProgram.id}
                     className={cn(
                       idx % 2 == 0 ? "bg-gray-50" : "white",
                       "[&]:text-center"
@@ -130,34 +136,54 @@ export const PhotoList: React.FC<{
                     <TableCell className="hidden sm:table-cell">
                       <Image
                         // @ts-ignore
-                        src={photo.data().src}
-                        className="aspect-square rounded-md object-contain"
+                        src={trainingProgram.data().image.src}
+                        className="aspect-square rounded-md object-cover"
                         height="64"
-                        alt={photo.data().caption}
+                        alt={trainingProgram.data().image.caption}
                         width="64"
                       />
                     </TableCell>
                     <TableCell className="font-medium min-w-[250px] max-w-sm">
-                      {photo.data().caption}
+                      {trainingProgram.data().title}
+                    </TableCell>
+                    <TableCell className="font-medium min-w-[250px] max-w-sm">
+                      {trainingProgram.data().excerpt}
+                    </TableCell>
+                    <TableCell className="font-medium min-w-[160px] max-w-sm">
+                      {trainingProgram.data().location}
                     </TableCell>
                     <TableCell className="font-medium min-w-[150px] max-w-sm">
-                      {photo.data().category}
+                      {format(trainingProgram.data().date, "PPP")}
                     </TableCell>
+                    <TableCell className="font-medium min-w-[150px] max-w-sm">
+                      {trainingProgram.data().category}
+                    </TableCell>
+                    <TableCell className="font-medium min-w-[150px] max-w-sm">
+                      {trainingProgram
+                        .data()
+                        .tags.map(
+                          (tag: { id: string; text: string }) => tag.text
+                        )
+                        .join(", ")}
+                    </TableCell>
+                    {/* <TableCell className="font-medium min-w-[150px] max-w-sm">
+                      {trainingProgram.data().author.name}
+                    </TableCell> */}
                     <TableCell>
                       <Badge
                         variant="outline"
                         className={cn(
-                          photo.data().status == "active"
+                          trainingProgram.data().status == "active"
                             ? "border-green-500 text-green-500"
                             : ""
                         )}
                       >
-                        {photo.data().status}
+                        {trainingProgram.data().status}
                       </Badge>
                     </TableCell>
 
                     <TableCell className="hidden md:table-cell min-w-[180px] max-w-sm">
-                      {dayjs(photo.data().modifiedAt).format(
+                      {dayjs(trainingProgram.data().modifiedAt).format(
                         CONSTANTS.DAYJS_FORMAT
                       )}
                     </TableCell>
@@ -185,15 +211,15 @@ export const PhotoList: React.FC<{
                           size="icon"
                           variant="default"
                           // @ts-ignore
-                          onClick={() => onEditClick(photo)}
+                          onClick={() => onEditClick(trainingProgram)}
                           className="cursor-pointer"
                         >
                           <MdEdit className="h-5 w-5" />
                           <span className="sr-only">Edit</span>
                         </Button>
-                        <DeletePhoto
+                        <DeleteTrainingProgram
                           // @ts-ignore
-                          photo={photo}
+                          trainingProgram={trainingProgram}
                         />
                       </div>
                     </TableCell>
@@ -201,6 +227,7 @@ export const PhotoList: React.FC<{
                 ))}
               </TableBody>
             </Table>
+            {/* </div> */}
           </CardContent>
         )}
         {/* <CardFooter>

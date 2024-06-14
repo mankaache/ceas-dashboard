@@ -1,51 +1,51 @@
 import { BaseLayout } from "@/components/layout";
 import dynamic from "next/dynamic";
 import React from "react";
-import { IArticle } from "@/models";
+import { IEvent } from "@/models";
 import { DocumentSnapshot, QueryDocumentSnapshot } from "firebase/firestore";
 
-const ArticleList = dynamic(() =>
-  import("@/components/pages/articles").then((mod) => mod.ArticleList)
+const EventList = dynamic(() =>
+  import("@/components/pages/events").then((mod) => mod.EventList)
 );
 
-const ArticleForm = dynamic(() =>
-  import("@/components/pages/articles").then((mod) => mod.ArticleForm)
+const EventForm = dynamic(() =>
+  import("@/components/pages/events").then((mod) => mod.EventForm)
 );
 
-export default function Articles() {
-  //   const [articles, setArticles] = React.useState(ARTICLES);
+export default function Events() {
+  //   const [events, setEvents] = React.useState(EVENTS);
   const [isEditing, setIsEditing] = React.useState(false);
-  const [currentArticle, setCurrentArticle] =
-    React.useState<DocumentSnapshot<IArticle> | null>(null);
+  const [currentEvent, setCurrentEvent] =
+    React.useState<DocumentSnapshot<IEvent> | null>(null);
 
-  const handleEditClick = (article?: QueryDocumentSnapshot<IArticle>) => {
-    if (article) setCurrentArticle(article);
+  const handleEditClick = (event?: QueryDocumentSnapshot<IEvent>) => {
+    if (event) setCurrentEvent(event);
     setIsEditing(true);
   };
 
   const handleCancelClick = () => {
-    setCurrentArticle(null);
+    setCurrentEvent(null);
     setIsEditing(false);
   };
 
   const handleSave = () => {
-    setCurrentArticle(null);
+    setCurrentEvent(null);
     setIsEditing(false);
   };
 
-  const handleDeleteClick = (article: QueryDocumentSnapshot<IArticle>) => {};
+  const handleDeleteClick = (event: QueryDocumentSnapshot<IEvent>) => {};
   return (
     <BaseLayout>
       <div className="p-4 flex flex-col items-center justify-center h-full mx-auto">
         {isEditing ? (
-          <ArticleForm
+          <EventForm
             // @ts-ignore
-            article={currentArticle}
+            event={currentEvent}
             onCancel={handleCancelClick}
             onSave={handleSave}
           />
         ) : (
-          <ArticleList
+          <EventList
             // @ts-ignore
             onEditClick={handleEditClick}
             // @ts-ignore

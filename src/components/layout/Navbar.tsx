@@ -34,6 +34,7 @@ import { Button } from "../ui/button";
 import { useSignOut } from "react-firebase-hooks/auth";
 import { auth } from "@/firebase/config";
 import { useRouter } from "next/router";
+import { CONSTANTS } from "@/data";
 
 const Navbar = () => {
   const [signOut, loading, error] = useSignOut(auth);
@@ -43,6 +44,11 @@ const Navbar = () => {
     await signOut();
     router.push("/auth/login");
   };
+
+  const { pathname } = useRouter();
+  const media = React.useMemo(() => CONSTANTS.DATA_MAP, []);
+  const menu = React.useMemo(() => CONSTANTS.MENU_MAP, []);
+  const pathLabel = React.useMemo(() => pathname.slice(1), [pathname]);
 
   return (
     <div className="h-[75px] bg-white flex items-center justify-end shadow-sm px-4 py-2">
@@ -54,16 +60,39 @@ const Navbar = () => {
                 <Link href="#">Tableau De Bord</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href="#">Mediatheque</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Articles</BreadcrumbPage>
-            </BreadcrumbItem>
+            {media.hasOwnProperty(pathLabel) ? (
+              <>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link href="#">Mediatheque</Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage className="capitalize">
+                    {
+                      // @ts-ignore
+                      media[pathLabel]
+                    }
+                  </BreadcrumbPage>
+                </BreadcrumbItem>
+              </>
+            ) : menu.hasOwnProperty(pathLabel) ? (
+              <>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage className="capitalize">
+                    {
+                      // @ts-ignore
+                      menu[pathLabel]
+                    }
+                  </BreadcrumbPage>
+                </BreadcrumbItem>
+              </>
+            ) : (
+              <></>
+            )}
           </BreadcrumbList>
         </Breadcrumb>
         <div className="relative ml-auto mr-4 flex-1 md:grow-0">
@@ -82,7 +111,7 @@ const Navbar = () => {
               className="overflow-hidden rounded-full h-[50px] w-[50px] relative"
             >
               <Image
-                src={commonImages.user}
+                src={commonImages.logo}
                 fill
                 objectFit="cover"
                 alt="Avatar"

@@ -19,7 +19,6 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-
 import {
   Select,
   SelectContent,
@@ -27,9 +26,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
 import { cn } from "@/lib/utils";
-import { ICategory, IPhoto } from "@/models";
+import { IDocument } from "@/models";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -56,10 +54,8 @@ import {
   serverTimestamp,
   Timestamp,
   QueryDocumentSnapshot,
-  doc,
   setDoc,
-  query,
-  orderBy,
+  doc,
 } from "firebase/firestore";
 
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
@@ -67,12 +63,7 @@ import { getError, getFilePath } from "@/utils";
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
-import { useCollection } from "react-firebase-hooks/firestore";
-import {
-  addSubcategory,
-  findSubcategoryByLabel,
-  useSubcategories,
-} from "@/firebase/helpers";
+import { addSubcategory, useSubcategories } from "@/firebase/helpers";
 
 registerPlugin(
   FilePondPluginImageExifOrientation,
@@ -80,25 +71,17 @@ registerPlugin(
   FilePondPluginFileValidateType
 );
 
-// const photoSchema = z.object({
-//   src: z
-//     .string({ message: "Please select a file" })
-//     .url({ message: "Invalid url" }),
-//   caption: z
-//     .string({ message: "Caption is required" })
-//     .min(1, "Caption should be atleast 1 character"),
-//   category: z.string({ message: "Category is required" }),
-//   custom_category: z.string().optional(),
-// });
-
-const photoSchema = z
+const documentSchema = z
   .object({
     src: z
       .string({ message: "Please select a file" })
       .url({ message: "Invalid url" }),
-    caption: z
-      .string({ message: "Caption is required" })
-      .min(1, { message: "Caption should be at least 1 character" }),
+    title: z
+      .string({ message: "Title is required" })
+      .min(1, "Title should be atleast 1 character"),
+    description: z
+      .string({ message: "Description is required" })
+      .min(1, "Description should be atleast 1 character"),
     category: z.string().optional(),
     custom_category: z.string().optional(),
   })
@@ -111,125 +94,30 @@ const photoSchema = z
     path: ["category"], // This indicates where the error message will be displayed
   });
 
-// Photo Form Component
-export const PhotoForm: React.FC<{
-  photo: QueryDocumentSnapshot | null;
+// Document Form Component
+export const DocumentForm: React.FC<{
+  document: QueryDocumentSnapshot | null;
   onCancel: () => void;
   onSave: () => void;
-}> = ({ photo, onCancel, onSave }) => {
-  let storageRef;
-
-  // const pond = FilePond.create({
-  //   files: [
-  //     {
-  //       source: photo?.data().src,
-
-  //       options: {
-  //         type: "local",
-  //       },
-  //     },
-  //   ],
-  // });
-
-  // const initialRemoteFile = {
-  //   // source: "https://example.com/path/to/your/image.jpg", // Replace with your remote image URL
-  //   source: photo?.data().src,
-  //   options: {
-  //     type: "remote",
-  //     // file: {
-  //     //   name: "Remote Image",
-  //     //   type: "image/jpeg",
-  //     // },
-  //   },
-  // };
-
+}> = ({ document, onCancel, onSave }) => {
   const [files, setFiles] = React.useState<File[]>([]);
-
   const [uploadFile, uploading, upLoadSnapshot, error] = useUploadFile();
-  const [value, loading, dError] = useDownloadURL(storageRef);
-  // const [categories, catLoading, catError] = useCollection(catQuery);
-  const [categories, catLoading, catError] = useSubcategories("photos");
+  const [categories, catLoading, catError] = useSubcategories("documents");
 
-  const form = useForm<z.infer<typeof photoSchema>>({
-    defaultValues: photo
+  const form = useForm<z.infer<typeof documentSchema>>({
+    defaultValues: document
       ? {
-          src: photo.data().src,
-          caption: photo.data().caption,
-          category: photo.data().category,
+          src: document.data().src,
+          title: document.data().title,
+          description: document.data().description,
+          category: document.data().category,
         }
       : {},
-    resolver: zodResolver(photoSchema),
+    resolver: zodResolver(documentSchema),
   });
-
-  // const uploadFileAndGetURL = (file: File) => {
-  //   return new Promise((resolve, reject) => {
-  //     const storageRef = ref(storage, `uploads/${file.name}`);
-  //     const uploadTask = uploadBytesResumable(storageRef, file);
-
-  //     uploadTask.on(
-  //       "state_changed",
-  //       (snapshot) => {
-  //         // Handle progress, e.g., display progress bar if needed
-  //       },
-  //       (error) => {
-  //         reject(error);
-  //       },
-  //       () => {
-  //         getDownloadURL(uploadTask.snapshot.ref)
-  //           .then((downloadURL) => {
-  //             resolve(downloadURL);
-  //           })
-  //           .catch(reject);
-  //       }
-  //     );
-  //   });
-  // };
-
-  // const savePhotoToFirestore = async (url, caption) => {
-  //   const photoData = {
-  //     src: url,
-  //     caption: caption,
-  //     createdAt: serverTimestamp(),
-  //     modifiedAt: serverTimestamp(),
-  //     status: 'active'
-  //   };
-
-  //   try {
-  //     await addDoc(collection(firestore, 'photos'), photoData);
-  //   } catch (error) {
-  //     console.error("Error adding document: ", error);
-  //   }
-  // };
-
-  // const handleFilePondUpdate = useCallback(
-  //   async (fileItems) => {
-  //     if (fileItems.length > 0) {
-  //       const file = fileItems[0].file;
-  //       setUploading(true);
-  //       setError(null);
-
-  //       try {
-  //         const url = await uploadFileAndGetURL(file);
-  //         await savePhotoToFirestore(url, caption);
-  //         console.log("File uploaded and data saved to Firestore");
-  //       } catch (err) {
-  //         setError(err.message);
-  //       } finally {
-  //         setUploading(false);
-  //       }
-  //     }
-  //   },
-  //   [caption]
-  // );
 
   const handleFileChange = (fileItems: any) => {
     if (fileItems.length > 0) {
-      // console.log(
-      //   fileItems,
-      //   typeof fileItems[0] == "string"
-      //     ? fileItems[0]
-      //     : URL.createObjectURL(fileItems[0].file)
-      // );
       setFiles(fileItems);
       form.setValue(
         "src",
@@ -257,7 +145,7 @@ export const PhotoForm: React.FC<{
     });
   };
 
-  const onSubmitAdd = async (data: z.infer<typeof photoSchema>) => {
+  const onSubmitAdd = async (data: z.infer<typeof documentSchema>) => {
     // console.log(data);
     // console.log(files);
 
@@ -267,29 +155,28 @@ export const PhotoForm: React.FC<{
         Swal.showLoading(Swal.getConfirmButton());
 
         if (data.custom_category) {
-          await addSubcategory("photos", {
+          await addSubcategory("documents", {
             label: data.custom_category,
             value: data.custom_category,
           });
         }
 
-        // TODO: solve denormalization problem related to static data
-
-        // const category = await findSubcategoryByLabel(
-        //   "photos",
-        //   (data.category ?? data.custom_category) as string
-        // );
-
         // @ts-ignore
         const url = await handleFileUpload(files[0].file);
-        const docRef = await addDoc(collection(firestore, "photos"), {
+        // const documentRef = doc(collection(firestore, "documents"))
+        const documentRef = collection(firestore, "documents");
+        const documentData = {
+          // id: documentRef.id,
           src: url,
-          caption: data.caption,
+          title: data.title,
+          description: data.description,
           createdAt: dayjs().toISOString(),
           modifiedAt: dayjs().toISOString(),
           status: "active",
           category: data.category ?? data.custom_category,
-        });
+        };
+        // await setDoc(documentRef, documentData)
+        await addDoc(documentRef, documentData);
 
         const swalRes = await Swal.fire({
           title: "Succès!",
@@ -314,8 +201,8 @@ export const PhotoForm: React.FC<{
     }
   };
 
-  const onSubmitEdit = async (data: z.infer<typeof photoSchema>) => {
-    if (!(photo || Boolean(files.length))) {
+  const onSubmitEdit = async (data: z.infer<typeof documentSchema>) => {
+    if (!(document || Boolean(files.length))) {
       toast.error("No file present!");
     } else {
       try {
@@ -323,27 +210,28 @@ export const PhotoForm: React.FC<{
         Swal.showLoading(Swal.getConfirmButton());
 
         if (data.custom_category) {
-          await addSubcategory("photos", {
+          await addSubcategory("documents", {
             label: data.custom_category,
             value: data.custom_category,
           });
         }
 
         const url = !Boolean(files.length)
-          ? photo?.data().src
+          ? document?.data().src
           : // @ts-ignore
             await handleFileUpload(files[0].file);
 
-        const photoRef = doc(firestore, "photos", photo!.id);
-        const photoData = {
+        const documentRef = doc(firestore, "documents", document!.id);
+        const documentData = {
           src: url,
-          caption: data.caption,
-          createdAt: photo?.data().createdAt,
+          title: data.title,
+          description: data.description,
+          createdAt: document?.data().createdAt,
           modifiedAt: dayjs().toISOString(),
           status: "active",
           category: data.category ?? data.custom_category,
         };
-        await setDoc(photoRef, photoData, { merge: true });
+        await setDoc(documentRef, documentData, { merge: true });
 
         const swalRes = await Swal.fire({
           title: "Succès!",
@@ -365,10 +253,6 @@ export const PhotoForm: React.FC<{
       }
     }
   };
-
-  // React.useEffect(() => {
-  //   // console.log(files);
-  // }, [files]);
 
   return (
     <motion.div
@@ -380,84 +264,16 @@ export const PhotoForm: React.FC<{
     >
       <Card className="w-full fade-enter fade-enter-active">
         <CardHeader>
-          <CardTitle>{photo ? "Modifier" : "Ajouter une"} photo</CardTitle>
+          <CardTitle>{document ? "Modifier" : "Ajouter un"} document</CardTitle>
         </CardHeader>
         <CardContent>
-          {/* <div className="max-w-md mx-auto border border-red-500">
-          <FilePond
-            files={files}
-            onupdatefiles={setFiles}
-            allowMultiple={true}
-            maxFiles={3}
-            // server="/upload"
-            instantUpload={false}
-            allowProcess={false}
-            dropOnPage
-            dropValidation
-            name="files"
-            labelIdle='Drag & Drop your files or <span class="filepond--label-action">Browse</span>'
-          />
-        </div> */}
-          {/* <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label htmlFor="src" className="block text-sm font-medium">
-              Photo URL
-            </label>
-            <input
-              id="src"
-              type="text"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-              value={formPhoto.src}
-              onChange={(e) =>
-                setFormPhoto({ ...formPhoto, src: e.target.value })
-              }
-            />
-          </div>
-          <div className="mb-4">
-            <label htmlFor="caption" className="block text-sm font-medium">
-              Caption
-            </label>
-            <input
-              id="caption"
-              type="text"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-              value={formPhoto.caption}
-              onChange={(e) =>
-                setFormPhoto({ ...formPhoto, caption: e.target.value })
-              }
-            />
-          </div>
-          <div className="mb-4">
-            <label htmlFor="status" className="block text-sm font-medium">
-              Status
-            </label>
-            <select
-              id="status"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-              value={formPhoto.status}
-              onChange={(e) =>
-                setFormPhoto({ ...formPhoto, status: e.target.value })
-              }
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button type="button" onClick={onCancel} variant="secondary">
-              Cancel
-            </Button>
-            <Button type="submit" variant="default">
-              Save
-            </Button>
-          </div>
-        </form> */}
-
           <Form {...form}>
             <form
               noValidate
-              // @ts-ignore
-              onSubmit={form.handleSubmit(photo ? onSubmitEdit : onSubmitAdd)}
+              onSubmit={form.handleSubmit(
+                // @ts-ignore
+                document ? onSubmitEdit : onSubmitAdd
+              )}
               className="space-y-8"
             >
               <FormField
@@ -465,14 +281,14 @@ export const PhotoForm: React.FC<{
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Photo</FormLabel>
+                    <FormLabel>Document</FormLabel>
                     <FormControl>
                       <FilePond
                         files={files}
                         onupdatefiles={handleFileChange}
                         allowMultiple={false}
                         maxFiles={1}
-                        acceptedFileTypes={["image/*"]}
+                        acceptedFileTypes={["application/*", "text/*"]}
                         instantUpload={false}
                         allowProcess={false}
                         // name="file"
@@ -488,11 +304,11 @@ export const PhotoForm: React.FC<{
                 )}
               />
               <FormField
-                name="caption"
+                name="title"
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Caption</FormLabel>
+                    <FormLabel>Titre</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
@@ -504,27 +320,24 @@ export const PhotoForm: React.FC<{
                   </FormItem>
                 )}
               />
-              {/* <FormField
-              name="status"
-              control={form.control}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <FormControl>
-                    <Select {...field}>
-                      <SelectTrigger className="">
-                        <SelectValue placeholder="Theme" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="draft">Draft</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            /> */}
+
+              <FormField
+                name="description"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="text"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <div className="w-full flex flex-wrap items-stretch justify-center gap-4">
                 <div className="category flex-1">

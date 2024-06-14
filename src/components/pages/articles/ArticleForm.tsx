@@ -19,7 +19,6 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-
 import {
   Select,
   SelectContent,
@@ -27,12 +26,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+// import { Tag, TagInput } from "emblor";
+import { TagInput } from "@/components/ui/tag";
 
 import { cn } from "@/lib/utils";
-import { ICategory, IPhoto } from "@/models";
+import { IArticle } from "@/models";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import slugify from "slugify";
 
 import { FilePond, registerPlugin } from "react-filepond";
 import "filepond/dist/filepond.min.css";
@@ -56,10 +58,8 @@ import {
   serverTimestamp,
   Timestamp,
   QueryDocumentSnapshot,
-  doc,
   setDoc,
-  query,
-  orderBy,
+  doc,
 } from "firebase/firestore";
 
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
@@ -67,12 +67,13 @@ import { getError, getFilePath } from "@/utils";
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
-import { useCollection } from "react-firebase-hooks/firestore";
-import {
-  addSubcategory,
-  findSubcategoryByLabel,
-  useSubcategories,
-} from "@/firebase/helpers";
+import { addSubcategory, useSubcategories } from "@/firebase/helpers";
+
+import MarkdownIt from "markdown-it";
+import MdEditor from "react-markdown-editor-lite";
+// import style manually
+import "react-markdown-editor-lite/lib/index.css";
+import dynamic from "next/dynamic";
 
 registerPlugin(
   FilePondPluginImageExifOrientation,
@@ -80,27 +81,56 @@ registerPlugin(
   FilePondPluginFileValidateType
 );
 
-// const photoSchema = z.object({
-//   src: z
-//     .string({ message: "Please select a file" })
-//     .url({ message: "Invalid url" }),
-//   caption: z
-//     .string({ message: "Caption is required" })
-//     .min(1, "Caption should be atleast 1 character"),
-//   category: z.string({ message: "Category is required" }),
-//   custom_category: z.string().optional(),
-// });
+interface ITag {
+  id: string;
+  text: string;
+}
 
-const photoSchema = z
+// Initialize a markdown parser
+const mdParser = new MarkdownIt(/* Markdown-it options */);
+
+const imageSchema = z.object({
+  src: z.string().url({ message: "Invalid URL" }),
+  caption: z
+    .string()
+    .min(1, { message: "Caption should be at least 1 character" }),
+});
+
+const tagSchema = z.object({
+  id: z.string().min(1, { message: "Tag should be at least 1 character" }),
+  text: z.string().min(1, { message: "Tag should be at least 1 character" }),
+});
+
+const authorSchema = z.object({
+  name: z
+    .string({ message: "Author name required" })
+    .min(1, { message: "Name be at least 1 character" }),
+});
+
+const articleSchema = z
   .object({
-    src: z
-      .string({ message: "Please select a file" })
-      .url({ message: "Invalid url" }),
-    caption: z
-      .string({ message: "Caption is required" })
-      .min(1, { message: "Caption should be at least 1 character" }),
+    image: imageSchema,
+    title: z
+      .string({ message: "Title is required" })
+      .min(1, "Title should be atleast 1 character"),
+    excerpt: z
+      .string({ message: "Excerpt is required" })
+      .min(1, "Excerpt should be atleast 1 character"),
+    slug: z
+      .string({ message: "Slug is required" })
+      .min(1, "Slug should be atleast 1 character"),
+
+    content: z
+      .string({ message: "Content is required" })
+      .min(1, "Content should be atleast 1 character"),
+    tags: z.array(tagSchema), // Define tags as an array of strings
+    author: authorSchema,
     category: z.string().optional(),
     custom_category: z.string().optional(),
+  })
+  .refine((data) => data.slug.toLowerCase() === data.slug, {
+    message: "Slug should be lowercase",
+    path: ["slug"], // This indicates where the error message will be displayed
   })
   .refine((data) => data.category || data.custom_category, {
     message: "Either Category or Custom Category is required",
@@ -111,128 +141,44 @@ const photoSchema = z
     path: ["category"], // This indicates where the error message will be displayed
   });
 
-// Photo Form Component
-export const PhotoForm: React.FC<{
-  photo: QueryDocumentSnapshot | null;
+// Article Form Component
+export const ArticleForm: React.FC<{
+  article: QueryDocumentSnapshot | null;
   onCancel: () => void;
   onSave: () => void;
-}> = ({ photo, onCancel, onSave }) => {
-  let storageRef;
-
-  // const pond = FilePond.create({
-  //   files: [
-  //     {
-  //       source: photo?.data().src,
-
-  //       options: {
-  //         type: "local",
-  //       },
-  //     },
-  //   ],
-  // });
-
-  // const initialRemoteFile = {
-  //   // source: "https://example.com/path/to/your/image.jpg", // Replace with your remote image URL
-  //   source: photo?.data().src,
-  //   options: {
-  //     type: "remote",
-  //     // file: {
-  //     //   name: "Remote Image",
-  //     //   type: "image/jpeg",
-  //     // },
-  //   },
-  // };
-
+}> = ({ article, onCancel, onSave }) => {
+  const [activeTagIndex, setActiveTagIndex] = React.useState<number | null>(
+    null
+  );
+  const [tags, setTags] = React.useState<ITag[]>(article?.data().tags ?? []);
   const [files, setFiles] = React.useState<File[]>([]);
-
   const [uploadFile, uploading, upLoadSnapshot, error] = useUploadFile();
-  const [value, loading, dError] = useDownloadURL(storageRef);
-  // const [categories, catLoading, catError] = useCollection(catQuery);
-  const [categories, catLoading, catError] = useSubcategories("photos");
+  const [categories, catLoading, catError] = useSubcategories("articles");
 
-  const form = useForm<z.infer<typeof photoSchema>>({
-    defaultValues: photo
+  const form = useForm<z.infer<typeof articleSchema>>({
+    defaultValues: article
       ? {
-          src: photo.data().src,
-          caption: photo.data().caption,
-          category: photo.data().category,
+          image: {
+            src: article.data().image.src,
+            caption: article.data().image.caption,
+          },
+          title: article.data().title,
+          excerpt: article.data().excerpt,
+          slug: article.data().slug,
+          content: article.data().content,
+          tags: article.data().tags || [],
+          author: article.data().author,
+          category: article.data().category,
         }
-      : {},
-    resolver: zodResolver(photoSchema),
+      : { author: { name: "CEAS-GRNE" }, tags: [] },
+    resolver: zodResolver(articleSchema),
   });
-
-  // const uploadFileAndGetURL = (file: File) => {
-  //   return new Promise((resolve, reject) => {
-  //     const storageRef = ref(storage, `uploads/${file.name}`);
-  //     const uploadTask = uploadBytesResumable(storageRef, file);
-
-  //     uploadTask.on(
-  //       "state_changed",
-  //       (snapshot) => {
-  //         // Handle progress, e.g., display progress bar if needed
-  //       },
-  //       (error) => {
-  //         reject(error);
-  //       },
-  //       () => {
-  //         getDownloadURL(uploadTask.snapshot.ref)
-  //           .then((downloadURL) => {
-  //             resolve(downloadURL);
-  //           })
-  //           .catch(reject);
-  //       }
-  //     );
-  //   });
-  // };
-
-  // const savePhotoToFirestore = async (url, caption) => {
-  //   const photoData = {
-  //     src: url,
-  //     caption: caption,
-  //     createdAt: serverTimestamp(),
-  //     modifiedAt: serverTimestamp(),
-  //     status: 'active'
-  //   };
-
-  //   try {
-  //     await addDoc(collection(firestore, 'photos'), photoData);
-  //   } catch (error) {
-  //     console.error("Error adding document: ", error);
-  //   }
-  // };
-
-  // const handleFilePondUpdate = useCallback(
-  //   async (fileItems) => {
-  //     if (fileItems.length > 0) {
-  //       const file = fileItems[0].file;
-  //       setUploading(true);
-  //       setError(null);
-
-  //       try {
-  //         const url = await uploadFileAndGetURL(file);
-  //         await savePhotoToFirestore(url, caption);
-  //         console.log("File uploaded and data saved to Firestore");
-  //       } catch (err) {
-  //         setError(err.message);
-  //       } finally {
-  //         setUploading(false);
-  //       }
-  //     }
-  //   },
-  //   [caption]
-  // );
 
   const handleFileChange = (fileItems: any) => {
     if (fileItems.length > 0) {
-      // console.log(
-      //   fileItems,
-      //   typeof fileItems[0] == "string"
-      //     ? fileItems[0]
-      //     : URL.createObjectURL(fileItems[0].file)
-      // );
       setFiles(fileItems);
       form.setValue(
-        "src",
+        "image.src",
         typeof fileItems[0] == "string"
           ? fileItems[0]
           : URL.createObjectURL(fileItems[0].file)
@@ -257,7 +203,22 @@ export const PhotoForm: React.FC<{
     });
   };
 
-  const onSubmitAdd = async (data: z.infer<typeof photoSchema>) => {
+  const handleTitleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const title = event.target.value;
+    const currentDate = dayjs().format("YYYY-MM-DD");
+    const slug = slugify(`${title} ${currentDate}`, { lower: true });
+
+    // Assuming 'title' and 'slug' are fields in your form
+    form.setValue("title", title);
+    form.setValue("slug", slug);
+  };
+
+  function handleEditorChange({ html, text }: { html: string; text: string }) {
+    // console.log("handleEditorChange", html, text);
+    form.setValue("content", text);
+  }
+
+  const onSubmitAdd = async (data: z.infer<typeof articleSchema>) => {
     // console.log(data);
     // console.log(files);
 
@@ -267,29 +228,35 @@ export const PhotoForm: React.FC<{
         Swal.showLoading(Swal.getConfirmButton());
 
         if (data.custom_category) {
-          await addSubcategory("photos", {
+          await addSubcategory("articles", {
             label: data.custom_category,
             value: data.custom_category,
           });
         }
 
-        // TODO: solve denormalization problem related to static data
-
-        // const category = await findSubcategoryByLabel(
-        //   "photos",
-        //   (data.category ?? data.custom_category) as string
-        // );
-
         // @ts-ignore
         const url = await handleFileUpload(files[0].file);
-        const docRef = await addDoc(collection(firestore, "photos"), {
-          src: url,
-          caption: data.caption,
+        // const articleRef = doc(collection(firestore, "articles"))
+        const articleRef = collection(firestore, "articles");
+        const articleData = {
+          // id: articleRef.id,
+          image: {
+            src: url,
+            caption: data.image.caption,
+          },
+          title: data.title,
+          excerpt: data.excerpt,
+          slug: data.slug,
+          content: data.content,
+          tags: data.tags,
+          author: data.author,
+          category: data.category ?? data.custom_category,
           createdAt: dayjs().toISOString(),
           modifiedAt: dayjs().toISOString(),
           status: "active",
-          category: data.category ?? data.custom_category,
-        });
+        };
+        // await setDoc(articleRef, articleData)
+        await addDoc(articleRef, articleData);
 
         const swalRes = await Swal.fire({
           title: "Succès!",
@@ -314,8 +281,8 @@ export const PhotoForm: React.FC<{
     }
   };
 
-  const onSubmitEdit = async (data: z.infer<typeof photoSchema>) => {
-    if (!(photo || Boolean(files.length))) {
+  const onSubmitEdit = async (data: z.infer<typeof articleSchema>) => {
+    if (!(article || Boolean(files.length))) {
       toast.error("No file present!");
     } else {
       try {
@@ -323,27 +290,36 @@ export const PhotoForm: React.FC<{
         Swal.showLoading(Swal.getConfirmButton());
 
         if (data.custom_category) {
-          await addSubcategory("photos", {
+          await addSubcategory("articles", {
             label: data.custom_category,
             value: data.custom_category,
           });
         }
 
         const url = !Boolean(files.length)
-          ? photo?.data().src
+          ? article?.data().image.src
           : // @ts-ignore
             await handleFileUpload(files[0].file);
 
-        const photoRef = doc(firestore, "photos", photo!.id);
-        const photoData = {
-          src: url,
-          caption: data.caption,
-          createdAt: photo?.data().createdAt,
+        const articleRef = doc(firestore, "articles", article!.id);
+        const articleData = {
+          image: {
+            src: url,
+            caption: data.image.caption,
+          },
+          title: data.title,
+          excerpt: data.excerpt,
+          slug: data.slug,
+          content: data.content,
+          tags: data.tags,
+          author: data.author,
+          category: data.category ?? data.custom_category,
+          createdAt: article?.data().createdAt,
           modifiedAt: dayjs().toISOString(),
           status: "active",
-          category: data.category ?? data.custom_category,
         };
-        await setDoc(photoRef, photoData, { merge: true });
+
+        await setDoc(articleRef, articleData, { merge: true });
 
         const swalRes = await Swal.fire({
           title: "Succès!",
@@ -365,10 +341,6 @@ export const PhotoForm: React.FC<{
       }
     }
   };
-
-  // React.useEffect(() => {
-  //   // console.log(files);
-  // }, [files]);
 
   return (
     <motion.div
@@ -380,92 +352,24 @@ export const PhotoForm: React.FC<{
     >
       <Card className="w-full fade-enter fade-enter-active">
         <CardHeader>
-          <CardTitle>{photo ? "Modifier" : "Ajouter une"} photo</CardTitle>
+          <CardTitle>{article ? "Modifier" : "Ajouter un"} article</CardTitle>
         </CardHeader>
         <CardContent>
-          {/* <div className="max-w-md mx-auto border border-red-500">
-          <FilePond
-            files={files}
-            onupdatefiles={setFiles}
-            allowMultiple={true}
-            maxFiles={3}
-            // server="/upload"
-            instantUpload={false}
-            allowProcess={false}
-            dropOnPage
-            dropValidation
-            name="files"
-            labelIdle='Drag & Drop your files or <span class="filepond--label-action">Browse</span>'
-          />
-        </div> */}
-          {/* <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label htmlFor="src" className="block text-sm font-medium">
-              Photo URL
-            </label>
-            <input
-              id="src"
-              type="text"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-              value={formPhoto.src}
-              onChange={(e) =>
-                setFormPhoto({ ...formPhoto, src: e.target.value })
-              }
-            />
-          </div>
-          <div className="mb-4">
-            <label htmlFor="caption" className="block text-sm font-medium">
-              Caption
-            </label>
-            <input
-              id="caption"
-              type="text"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-              value={formPhoto.caption}
-              onChange={(e) =>
-                setFormPhoto({ ...formPhoto, caption: e.target.value })
-              }
-            />
-          </div>
-          <div className="mb-4">
-            <label htmlFor="status" className="block text-sm font-medium">
-              Status
-            </label>
-            <select
-              id="status"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-              value={formPhoto.status}
-              onChange={(e) =>
-                setFormPhoto({ ...formPhoto, status: e.target.value })
-              }
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button type="button" onClick={onCancel} variant="secondary">
-              Cancel
-            </Button>
-            <Button type="submit" variant="default">
-              Save
-            </Button>
-          </div>
-        </form> */}
-
           <Form {...form}>
             <form
               noValidate
-              // @ts-ignore
-              onSubmit={form.handleSubmit(photo ? onSubmitEdit : onSubmitAdd)}
+              onSubmit={form.handleSubmit(
+                // @ts-ignore
+                article ? onSubmitEdit : onSubmitAdd
+              )}
               className="space-y-8"
             >
               <FormField
-                name="src"
+                name="image.src"
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Photo</FormLabel>
+                    <FormLabel>Image</FormLabel>
                     <FormControl>
                       <FilePond
                         files={files}
@@ -487,8 +391,9 @@ export const PhotoForm: React.FC<{
                   </FormItem>
                 )}
               />
+
               <FormField
-                name="caption"
+                name="image.caption"
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
@@ -504,27 +409,134 @@ export const PhotoForm: React.FC<{
                   </FormItem>
                 )}
               />
-              {/* <FormField
-              name="status"
-              control={form.control}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <FormControl>
-                    <Select {...field}>
-                      <SelectTrigger className="">
-                        <SelectValue placeholder="Theme" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="draft">Draft</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            /> */}
+
+              <div className="w-full flex flex-wrap items-stretch justify-center gap-4">
+                <div className="title flex-1">
+                  <FormField
+                    name="title"
+                    control={form.control}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Titre</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            onChange={handleTitleChange}
+                            type="text"
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="slug flex-1">
+                  <FormField
+                    name="slug"
+                    control={form.control}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Slug</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="text"
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              <FormField
+                name="author.name"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Auteur</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="text"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                name="excerpt"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Extrait</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="text"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="content"
+                render={({ field }) => (
+                  <FormItem className="">
+                    <FormLabel className="text-left">Contenu</FormLabel>
+                    <FormControl>
+                      <MdEditor
+                        {...field}
+                        style={{ height: "500px" }}
+                        renderHTML={(text) => mdParser.render(text)}
+                        onChange={handleEditorChange}
+                        value={field.value}
+                      />
+                    </FormControl>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="tags"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col items-start">
+                    <FormLabel className="text-left">Étiqueter</FormLabel>
+                    <FormControl>
+                      <TagInput
+                        {...field}
+                        placeholder="Enter a tag"
+                        tags={tags}
+                        className="w-full"
+                        // @ts-ignore
+                        setTags={(newTags: ITag[]) => {
+                          // console.log(newTags);
+                          setTags(newTags);
+                          form.setValue("tags", newTags as [ITag, ...ITag[]]);
+                        }}
+                        activeTagIndex={activeTagIndex}
+                        setActiveTagIndex={setActiveTagIndex}
+                      />
+                    </FormControl>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <div className="w-full flex flex-wrap items-stretch justify-center gap-4">
                 <div className="category flex-1">

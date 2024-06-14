@@ -10,9 +10,14 @@ export default function App({ Component, pageProps }: AppProps) {
   const { isXl, isXxl } = useScreenSize();
   const router = useRouter();
 
-  // React.useEffect(() => {
-  //   if (!(isXl || isXxl)) router.push("/error/unsupported-device");
-  // }, [isXl, isXxl]);
+  React.useEffect(() => {
+    if (!(isXl || isXxl))
+      router.push({
+        pathname: "/error/unsupported-device",
+        query: { next: router.pathname },
+      });
+  }, [isXl, isXxl]);
+
   return (
     <>
       <Component {...pageProps} />

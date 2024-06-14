@@ -127,17 +127,20 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({
           { rel: "apple-touch-startup-image", href: "/og-image.jpg" },
         ]}
       />
-      <div className="flex w-screen h-screen items-center justify-center bg-white">
+      <div className="flex overflow-x-hidden w-screen h-screen items-center justify-center bg-white">
         <div className="flex h-full w-full m-0 p-0">
-          <div className="sidebar">
+          <div className="sidebar fixed w-[250px]">
             <SidebarNav />
           </div>
-          <div className="dash bg-gray-100 w-full">
+          <div className="dash bg-gray-100 ml-[250px] w-full max-w-[calc(100vw-250px)]">
             <div className="">
-              <header>
+              <header className="fixed top-0 right-0 w-full mx-auto max-w-[calc(100vw-250px)] z-[999]">
                 <Navbar />
               </header>
-              <main id="main" className="relative w-full h-full">
+              <main
+                id="main"
+                className="relative w-full h-full mt-[75px] scroll-smooth overflow-auto bg-gray-100"
+              >
                 {children}
               </main>
             </div>

@@ -1,6 +1,6 @@
 import React from "react";
 import Image from "next/image";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,17 +8,16 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -27,11 +26,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { BaseLayout } from "@/components/layout";
-import { CONSTANTS, PHOTOS } from "@/data";
+
 import { cn } from "@/lib/utils";
-import { MdDelete, MdEdit } from "react-icons/md";
-import { IPhoto } from "@/models";
+import { MdEdit } from "react-icons/md";
+import { ICategory, ICategoryType } from "@/models";
 import { motion } from "framer-motion";
 import { useCollection } from "react-firebase-hooks/firestore";
 import {
@@ -45,23 +43,39 @@ import { InnerPageLoader } from "@/components/loaders";
 import dynamic from "next/dynamic";
 import { InnerPageError } from "@/components/errors";
 import dayjs from "dayjs";
+import { CONSTANTS } from "@/data";
+import { useSubcategories } from "@/firebase/helpers";
 
-const DeletePhoto = dynamic(
-  () => import("@/components/pages/photos").then((mod) => mod.DeletePhoto),
+const DeleteCategory = dynamic(
+  () =>
+    import("@/components/pages/categories").then((mod) => mod.DeleteCategory),
   { ssr: false }
 );
 
-export const PhotoList: React.FC<{
-  onEditClick: (photo?: DocumentSnapshot<IPhoto>) => void;
-  onDeleteClick: (photo: DocumentSnapshot<IPhoto>) => void;
+export const CategoryList: React.FC<{
+  onEditClick: (
+    categoryType: ICategoryType,
+    category?: DocumentSnapshot<ICategory>
+  ) => void;
+  onDeleteClick: (
+    category: DocumentSnapshot<ICategory>,
+    categoryType: ICategoryType
+  ) => void;
 }> = ({ onDeleteClick, onEditClick }) => {
-  const photosQuery = query(
-    collection(firestore, "photos"),
-    orderBy("createdAt", "desc")
+  const [categoryType, setCategoryType] =
+    React.useState<ICategoryType>("photos");
+
+  const [value, loading, error] = useSubcategories(categoryType);
+
+  const OPTIONS = React.useMemo(
+    () =>
+      Object.keys(CONSTANTS.DATA_MAP).map((key) => ({
+        value: key,
+        // @ts-ignore
+        label: CONSTANTS.DATA_MAP[key],
+      })),
+    []
   );
-  const [value, loading, error] = useCollection(photosQuery, {
-    snapshotListenOptions: { includeMetadataChanges: false },
-  });
 
   if (loading) {
     return <InnerPageLoader loading={loading} />;
@@ -82,26 +96,44 @@ export const PhotoList: React.FC<{
       <Card className="w-full fade-enter fade-enter-active">
         <CardHeader className="flex flex-row items-center justify-between">
           <div className="title">
-            <CardTitle>Photos</CardTitle>
-            <CardDescription>Gérer et afficher vos photos</CardDescription>
+            <CardTitle>Catégories</CardTitle>
+            <CardDescription>Gérer et afficher vos catégories</CardDescription>
+          </div>
+
+          <div className="select w-1/4">
+            <Select
+              value={categoryType}
+              onValueChange={(v) => setCategoryType(v as ICategoryType)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                {OPTIONS.map((category, idx) => (
+                  <SelectItem key={idx} value={category.value}>
+                    {category.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="add mr-4">
             <Button
               type="button"
               variant="default"
-              onClick={() => onEditClick()}
+              onClick={() => onEditClick(categoryType)}
               className="flex gap-2 items-center justify-center"
             >
               <PlusCircle />
-              Ajouter une photo
+              Ajouter une catégorie
             </Button>
           </div>
         </CardHeader>
 
         {!Boolean(value?.docs.length) ? (
           <div className="mx-auto my-4 w-full flex items-center justify-center">
-            <p className="text-3xl p-4">Pas des photos</p>
+            <p className="text-3xl p-4">Pas des catégories</p>
           </div>
         ) : (
           <CardContent className="max-w-full overflow-x-auto">
@@ -109,55 +141,35 @@ export const PhotoList: React.FC<{
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-center hidden w-[100px] sm:table-cell">
-                    Aperçu
+                    #
                   </TableHead>
-                  <TableHead className="text-center">Légende</TableHead>
-                  <TableHead className="text-center">Catégorie</TableHead>
-                  <TableHead className="text-center">Statut</TableHead>
+                  <TableHead className="text-center">Étiquette</TableHead>
+                  <TableHead className="text-center">Valeur</TableHead>
                   <TableHead className="text-center">Modifié à</TableHead>
                   <TableHead className="text-center">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {value?.docs.map((photo, idx) => (
+                {value?.docs.map((category, idx) => (
                   <TableRow
-                    key={photo.id}
+                    key={category.id}
                     className={cn(
                       idx % 2 == 0 ? "bg-gray-50" : "white",
                       "[&]:text-center"
                     )}
                   >
                     <TableCell className="hidden sm:table-cell">
-                      <Image
-                        // @ts-ignore
-                        src={photo.data().src}
-                        className="aspect-square rounded-md object-contain"
-                        height="64"
-                        alt={photo.data().caption}
-                        width="64"
-                      />
+                      {idx + 1}
                     </TableCell>
                     <TableCell className="font-medium min-w-[250px] max-w-sm">
-                      {photo.data().caption}
+                      {category.data().label}
                     </TableCell>
-                    <TableCell className="font-medium min-w-[150px] max-w-sm">
-                      {photo.data().category}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          photo.data().status == "active"
-                            ? "border-green-500 text-green-500"
-                            : ""
-                        )}
-                      >
-                        {photo.data().status}
-                      </Badge>
+                    <TableCell className="font-medium min-w-[250px] max-w-sm">
+                      {category.data().value}
                     </TableCell>
 
                     <TableCell className="hidden md:table-cell min-w-[180px] max-w-sm">
-                      {dayjs(photo.data().modifiedAt).format(
+                      {dayjs(category.data().modifiedAt).format(
                         CONSTANTS.DAYJS_FORMAT
                       )}
                     </TableCell>
@@ -185,15 +197,16 @@ export const PhotoList: React.FC<{
                           size="icon"
                           variant="default"
                           // @ts-ignore
-                          onClick={() => onEditClick(photo)}
+                          onClick={() => onEditClick(categoryType, category)}
                           className="cursor-pointer"
                         >
                           <MdEdit className="h-5 w-5" />
                           <span className="sr-only">Edit</span>
                         </Button>
-                        <DeletePhoto
+                        <DeleteCategory
                           // @ts-ignore
-                          photo={photo}
+                          category={category}
+                          categoryType={categoryType}
                         />
                       </div>
                     </TableCell>
@@ -201,6 +214,7 @@ export const PhotoList: React.FC<{
                 ))}
               </TableBody>
             </Table>
+            {/* </div> */}
           </CardContent>
         )}
         {/* <CardFooter>
