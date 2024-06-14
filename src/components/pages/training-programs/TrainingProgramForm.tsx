@@ -74,7 +74,7 @@ import { getError, getFilePath } from "@/utils";
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
-import { addSubcategory, getSubcategories } from "@/firebase/helpers";
+import { addSubcategory, useSubcategories } from "@/firebase/helpers";
 
 import MarkdownIt from "markdown-it";
 import MdEditor from "react-markdown-editor-lite";
@@ -168,7 +168,7 @@ export const TrainingProgramForm: React.FC<{
   const [files, setFiles] = React.useState<File[]>([]);
   const [uploadFile, uploading, upLoadSnapshot, error] = useUploadFile();
   const [categories, catLoading, catError] =
-    getSubcategories("training-programs");
+    useSubcategories("training-programs");
 
   const form = useForm<z.infer<typeof trainingProgramSchema>>({
     defaultValues: trainingProgram

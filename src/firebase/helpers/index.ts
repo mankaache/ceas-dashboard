@@ -52,7 +52,7 @@ export const addSubcategory = async (
   });
 };
 
-export const getSubcategories = (categoryType: ICategoryType) => {
+export const useSubcategories = (categoryType: ICategoryType) => {
   const subcategoryRef = collection(
     firestore,
     "categories",

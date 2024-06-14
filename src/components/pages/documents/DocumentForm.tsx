@@ -63,7 +63,7 @@ import { getError, getFilePath } from "@/utils";
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
-import { addSubcategory, getSubcategories } from "@/firebase/helpers";
+import { addSubcategory, useSubcategories } from "@/firebase/helpers";
 
 registerPlugin(
   FilePondPluginImageExifOrientation,
@@ -102,7 +102,7 @@ export const DocumentForm: React.FC<{
 }> = ({ document, onCancel, onSave }) => {
   const [files, setFiles] = React.useState<File[]>([]);
   const [uploadFile, uploading, upLoadSnapshot, error] = useUploadFile();
-  const [categories, catLoading, catError] = getSubcategories("documents");
+  const [categories, catLoading, catError] = useSubcategories("documents");
 
   const form = useForm<z.infer<typeof documentSchema>>({
     defaultValues: document

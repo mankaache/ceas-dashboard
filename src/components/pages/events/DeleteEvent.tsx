@@ -63,7 +63,7 @@ export function DeleteEvent({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            <div className="text-2xl">Supprimer l'événement</div>
+            <div className="text-2xl">{"Supprimer l'événement"}</div>
           </DialogTitle>
         </DialogHeader>
         <div className="flex items-center space-x-2">

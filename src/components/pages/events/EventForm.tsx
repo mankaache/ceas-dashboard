@@ -74,7 +74,7 @@ import { getError, getFilePath } from "@/utils";
 import dayjs from "dayjs";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
-import { addSubcategory, getSubcategories } from "@/firebase/helpers";
+import { addSubcategory, useSubcategories } from "@/firebase/helpers";
 
 import MarkdownIt from "markdown-it";
 import MdEditor from "react-markdown-editor-lite";
@@ -165,7 +165,7 @@ export const EventForm: React.FC<{
   const [tags, setTags] = React.useState<ITag[]>(event?.data().tags ?? []);
   const [files, setFiles] = React.useState<File[]>([]);
   const [uploadFile, uploading, upLoadSnapshot, error] = useUploadFile();
-  const [categories, catLoading, catError] = getSubcategories("events");
+  const [categories, catLoading, catError] = useSubcategories("events");
 
   const form = useForm<z.infer<typeof eventSchema>>({
     defaultValues: event

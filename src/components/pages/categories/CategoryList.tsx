@@ -44,7 +44,7 @@ import dynamic from "next/dynamic";
 import { InnerPageError } from "@/components/errors";
 import dayjs from "dayjs";
 import { CONSTANTS } from "@/data";
-import { getSubcategories } from "@/firebase/helpers";
+import { useSubcategories } from "@/firebase/helpers";
 
 const DeleteCategory = dynamic(
   () =>
@@ -65,7 +65,7 @@ export const CategoryList: React.FC<{
   const [categoryType, setCategoryType] =
     React.useState<ICategoryType>("photos");
 
-  const [value, loading, error] = getSubcategories(categoryType);
+  const [value, loading, error] = useSubcategories(categoryType);
 
   const OPTIONS = React.useMemo(
     () =>

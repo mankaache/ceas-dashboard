@@ -71,7 +71,7 @@ import { useCollection } from "react-firebase-hooks/firestore";
 import {
   addSubcategory,
   findSubcategoryByLabel,
-  getSubcategories,
+  useSubcategories,
 } from "@/firebase/helpers";
 
 registerPlugin(
@@ -148,7 +148,7 @@ export const PhotoForm: React.FC<{
   const [uploadFile, uploading, upLoadSnapshot, error] = useUploadFile();
   const [value, loading, dError] = useDownloadURL(storageRef);
   // const [categories, catLoading, catError] = useCollection(catQuery);
-  const [categories, catLoading, catError] = getSubcategories("photos");
+  const [categories, catLoading, catError] = useSubcategories("photos");
 
   const form = useForm<z.infer<typeof photoSchema>>({
     defaultValues: photo

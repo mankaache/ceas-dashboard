@@ -67,7 +67,7 @@ import dayjs from "dayjs";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import { useCollection } from "react-firebase-hooks/firestore";
-import { addSubcategory, getSubcategories } from "@/firebase/helpers";
+import { addSubcategory, useSubcategories } from "@/firebase/helpers";
 
 registerPlugin(
   FilePondPluginImageExifOrientation,
@@ -106,7 +106,7 @@ export const VideoForm: React.FC<{
 }> = ({ video, onCancel, onSave }) => {
   const [files, setFiles] = React.useState<File[]>([]);
   const [uploadFile, uploading, upLoadSnapshot, error] = useUploadFile();
-  const [categories, catLoading, catError] = getSubcategories("videos");
+  const [categories, catLoading, catError] = useSubcategories("videos");
 
   const form = useForm<z.infer<typeof videoSchema>>({
     defaultValues: video

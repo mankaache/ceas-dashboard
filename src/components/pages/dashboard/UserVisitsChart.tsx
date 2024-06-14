@@ -41,7 +41,7 @@ const UserVisitsChart: React.FC<UserVisitsChartProps> = ({ data }) => {
     labels: data.map((entry) => entry.date),
     datasets: [
       {
-        label: "Number of Users",
+        label: "Nombre de utilisateurs",
         data: data.map((entry) => entry.visits),
         fill: false,
         // borderColor: "rgb(75, 192, 192)",

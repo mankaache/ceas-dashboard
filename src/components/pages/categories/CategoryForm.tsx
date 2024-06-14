@@ -42,7 +42,7 @@ import { toast } from "react-toastify";
 import { motion } from "framer-motion";
 import {
   addSubcategory,
-  getSubcategories,
+  useSubcategories,
   updateSubcategory,
 } from "@/firebase/helpers";
 import { CONSTANTS } from "@/data";

@@ -63,7 +63,7 @@ export function DeleteArticle({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            <div className="text-2xl">Supprimer l'article</div>
+            <div className="text-2xl">{"Supprimer l'article"}</div>
           </DialogTitle>
         </DialogHeader>
         <div className="flex items-center space-x-2">
