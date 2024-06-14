@@ -31,28 +31,52 @@ export interface IDocument {
 
 export interface IArticle {
   slug: string;
-  image: { src: string; alt: string };
+  image: { src: string; caption: string };
   title: string;
   excerpt: string;
   content: string;
   tags: string[];
   author: { name: string };
-  date: string;
+  createdAt: string;
+  modifiedAt?: string;
   status: "active" | "draft";
+  category: string;
 }
 
 export interface IEvent {
-  title: string;
   slug: string;
-  id?: string;
   image: {
     src: string;
-    alt: string;
+    caption: string;
   };
-  date: string;
-  category: string;
+  title: string;
   excerpt: string;
   content: string;
+  tags: string[];
+  // author: { name: string };
+  date: string;
+  createdAt: string;
+  modifiedAt?: string;
+  category: string;
+  location: string;
+  status: "active" | "draft";
+}
+
+export interface ITrainingProgram {
+  slug: string;
+  image: {
+    src: string;
+    caption: string;
+  };
+  title: string;
+  excerpt: string;
+  content: string;
+  tags: string[];
+  // author: { name: string };
+  date: string;
+  createdAt: string;
+  modifiedAt?: string;
+  category: string;
   location: string;
   status: "active" | "draft";
 }

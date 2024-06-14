@@ -7,3 +7,11 @@ export interface ICategory {
   createdAt: string;
   modifiedAt: string;
 }
+
+export type ICategoryType =
+  | "photos"
+  | "videos"
+  | "documents"
+  | "articles"
+  | "events"
+  | "training-programs";
