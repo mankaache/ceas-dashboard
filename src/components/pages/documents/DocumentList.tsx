@@ -37,6 +37,8 @@ import { InnerPageLoader } from "@/components/loaders";
 import dynamic from "next/dynamic";
 import { InnerPageError } from "@/components/errors";
 import { IoDocumentTextOutline } from "react-icons/io5";
+import dayjs from "dayjs";
+import { CONSTANTS } from "@/data";
 
 const DeleteDocument = dynamic(
   () =>
@@ -150,7 +152,9 @@ export const DocumentList: React.FC<{
                     </TableCell>
 
                     <TableCell className="hidden md:table-cell min-w-[180px] max-w-sm">
-                      {document.data().modifiedAt}
+                      {dayjs(document.data().modifiedAt).format(
+                        CONSTANTS.DAYJS_FORMAT
+                      )}
                     </TableCell>
                     <TableCell>
                       {/* <DropdownMenu>
