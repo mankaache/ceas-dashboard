@@ -170,8 +170,8 @@ export const DocumentForm: React.FC<{
           src: url,
           title: data.title,
           description: data.description,
-          createdAt: dayjs().format("YYYY-MM-DD hh:mm A"),
-          modifiedAt: dayjs().format("YYYY-MM-DD hh:mm A"),
+          createdAt: dayjs().toISOString(),
+          modifiedAt: dayjs().toISOString(),
           status: "active",
           category: data.category ?? data.custom_category,
         };
@@ -227,7 +227,7 @@ export const DocumentForm: React.FC<{
           title: data.title,
           description: data.description,
           createdAt: document?.data().createdAt,
-          modifiedAt: dayjs().format("YYYY-MM-DD hh:mm A"),
+          modifiedAt: dayjs().toISOString(),
           status: "active",
           category: data.category ?? data.custom_category,
         };
@@ -339,52 +339,61 @@ export const DocumentForm: React.FC<{
                 )}
               />
 
-              <FormField
-                name="category"
-                control={form.control}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <FormControl>
-                      <Select
-                        {...field}
-                        value={field.value}
-                        onValueChange={(v) => form.setValue("category", v)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories?.docs.map((category, idx) => (
-                            <SelectItem key={idx} value={category.data().value}>
-                              {category.data().label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="w-full flex flex-wrap items-stretch justify-center gap-4">
+                <div className="category flex-1">
+                  <FormField
+                    name="category"
+                    control={form.control}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Catégorie</FormLabel>
+                        <FormControl>
+                          <Select
+                            {...field}
+                            value={field.value}
+                            onValueChange={(v) => form.setValue("category", v)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {categories?.docs.map((category, idx) => (
+                                <SelectItem
+                                  key={idx}
+                                  value={category.data().value}
+                                >
+                                  {category.data().label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-              <FormField
-                name="custom_category"
-                control={form.control}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Custom Category</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="text"
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <div className="custom-category flex-1">
+                  <FormField
+                    name="custom_category"
+                    control={form.control}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Catégorie Personnalisée</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="text"
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
 
               <div className="flex justify-end gap-2">
                 <Button type="button" onClick={onCancel} variant="secondary">
