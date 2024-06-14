@@ -449,6 +449,7 @@ const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
                       onKeyDown={handleKeyDown}
                       onFocus={handleInputFocus}
                       onBlur={handleInputBlur}
+                      // @ts-ignore
                       inlineTags={inlineTags}
                       className={cn("border-0  flex-1 w-fit h-5", className)}
                     />
