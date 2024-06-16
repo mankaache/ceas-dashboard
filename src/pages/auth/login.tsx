@@ -28,10 +28,13 @@ import { useSignInWithEmailAndPassword } from "react-firebase-hooks/auth";
 import { ILoginSchema } from "@/models";
 import { toast } from "react-toastify";
 import { useRouter } from "next/router";
+import React from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 function LoginForm() {
   const router = useRouter();
   const { redirect } = router.query;
+  const [showPassword, setShowPassword] = React.useState(false);
 
   const [signInUserWithEmailAndPassword] = useSignInWithEmailAndPassword(auth);
 
@@ -43,7 +46,7 @@ function LoginForm() {
   const onSubmit = async ({ email, password }: ILoginSchema) => {
     try {
       const res = await signInUserWithEmailAndPassword(email, password);
-      console.log("response is: ", res);
+      // console.log("response is: ", res);
       toast.success("Connexion Réussie");
       router.push((redirect as string) || "/");
     } catch (err) {
@@ -92,25 +95,34 @@ function LoginForm() {
               </div>
               <div className="grid gap-2">
                 <FormField
-                  control={form.control}
                   name="password"
+                  control={form.control}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        <div className="flex items-center">
-                          <Label htmlFor="password">Mot de passe</Label>
-                          {/* <Link
-                            href="#"
-                            className="ml-auto inline-block text-sm underline"
-                          >
-                            Mot de passe oublié?
-                          </Link> */}
-                        </div>
-                      </FormLabel>
+                      <FormLabel>Mot de passe</FormLabel>
                       <FormControl>
-                        <Input id="password" type="password" {...field} />
+                        <div className="relative w-full max-w-sm items-center">
+                          <Input
+                            {...field}
+                            type={showPassword ? "text" : "password"}
+                            className="mt-1 pr-10 block w-full rounded-md border-gray-300 shadow-sm"
+                          />
+                          <span className="absolute end-0 inset-y-0 flex items-center justify-center px-2">
+                            {/* <Search className="size-6 text-muted-foreground" /> */}
+                            {showPassword ? (
+                              <EyeOff
+                                className="size-6 text-slate-500"
+                                onClick={() => setShowPassword((prev) => !prev)}
+                              />
+                            ) : (
+                              <Eye
+                                className="size-6 text-slate-500"
+                                onClick={() => setShowPassword((prev) => !prev)}
+                              />
+                            )}
+                          </span>
+                        </div>
                       </FormControl>
-
                       <FormMessage />
                     </FormItem>
                   )}
