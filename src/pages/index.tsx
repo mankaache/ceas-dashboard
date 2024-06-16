@@ -11,12 +11,13 @@ import { InnerPageError } from "@/components/errors";
 import { ICategoryType } from "@/models";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { UserVisitsChart } from "@/components/pages/dashboard";
 
 const inter = Inter({ subsets: ["latin"] });
 
-const UserVisitsChart = dynamic(() =>
-  import("@/components/pages/dashboard").then((mod) => mod.UserVisitsChart)
-);
+// const UserVisitsChart = dynamic(() =>
+//   import("@/components/pages/dashboard").then((mod) => mod.UserVisitsChart)
+// );
 
 export default function Home() {
   const media = React.useMemo(() => CONSTANTS.DATA_MAP, []);
@@ -127,33 +128,27 @@ export default function Home() {
     return <InnerPageError error={error} />;
   }
 
-  const userVisitsData = [
-    { date: "2024-01-01", visits: 120 },
-    { date: "2024-02-02", visits: 290 },
-    { date: "2024-03-03", visits: 140 },
-    { date: "2024-04-04", visits: 540 },
-    { date: "2024-05-05", visits: 518 },
-    { date: "2024-06-06", visits: 610 },
-    // Add more data points as needed
-  ];
-
   return (
     <BaseLayout>
       <div className="flex flex-col w-full p-4 h-full">
-        <h2 className="welcome text-3xl mb-6">Bienvenue</h2>
+        <h2 className="welcome text-3xl mb-6 text-blue-600 font-bold">
+          Bienvenue
+        </h2>
         <div className="user-visits-chart">
-          <UserVisitsChart data={userVisitsData} />
+          <UserVisitsChart />
         </div>
         <div className="statistics">
           <p className="stats text-slate-500 my-2">Statistiques</p>
           <div className="grid grid-cols-3 gap-4">
             {STATS.map((stat, idx) => (
               <Link key={idx} href={stat.href} legacyBehavior>
-                <div className="articles cursor-pointer w-full h-[120px] text-center border rounded-lg shadow-sm bg-white flex flex-col items-center justify-center gap-2">
-                  <p className="text-slate-500 text-xl capitalize">
+                <div className="articles bg-gradient-to-br from-blue-800 to-blue-400 cursor-pointer w-full h-[120px] border rounded-lg shadow-lg bg-white flex flex-col items-center justify-center gap-2">
+                  <p className="text-slate-300 text-md text-left capitalize">
                     {stat.name}
                   </p>
-                  <p className="text-4xl text-primary">{stat.value}</p>
+                  <p className="text-4xl text-primary text-white">
+                    {stat.value}
+                  </p>
                 </div>
               </Link>
             ))}
