@@ -6,7 +6,7 @@ import React from "react";
 
 const FullPageLoader = () => {
   return (
-    <div className="w-full max-w-7xl h-screen">
+    <div className="w-full max-w-screen-2xl mx-auto h-screen">
       <div className="flex items-center justify-center h-[80%] lg:h-full w-full">
         <div className="flex flex-col items-center justify-center gap-4">
           <div className="splash-image">
