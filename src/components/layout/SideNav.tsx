@@ -31,6 +31,8 @@ import { IoDocument, IoDocumentTextOutline } from "react-icons/io5";
 import { ImNewspaper } from "react-icons/im";
 import { FaBriefcase } from "react-icons/fa6";
 import { LogOutIcon } from "lucide-react";
+import { signOut } from "firebase/auth";
+import { auth } from "@/firebase/config";
 
 const SidebarNav: React.FC = () => {
   const router = useRouter();
@@ -91,6 +93,11 @@ const SidebarNav: React.FC = () => {
   ];
 
   const [toggled, setToggled] = React.useState(false);
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push("/auth/login");
+  };
 
   return (
     <div className="min-w-full min-h-full relative">
@@ -268,7 +275,7 @@ const SidebarNav: React.FC = () => {
                 title={"Se déconnecter"}
                 icon={<LogOutIcon />}
                 // className="hover:text-[#FC7702] hover:bg-white"
-                onClick={() => router.push("/logout")}
+                onClick={handleLogout}
               >
                 {"Se déconnecter"}
               </MenuItem>
