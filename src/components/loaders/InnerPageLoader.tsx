@@ -6,7 +6,7 @@ import { SyncLoader } from "react-spinners";
 
 const InnerPageLoader = ({ loading }: { loading: boolean }) => {
   return (
-    <div className="w-full h-[calc(100vh-75px)]">
+    <div className="w-full mx-auto h-[calc(100vh-75px)]">
       <div className="flex items-center justify-center h-[80%] lg:h-full w-full">
         <div className="flex flex-col items-center justify-center gap-4">
           <div className="splash-loader relative text-blue-500">
