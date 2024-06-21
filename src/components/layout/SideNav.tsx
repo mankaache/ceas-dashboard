@@ -30,6 +30,7 @@ import { AiOutlineClose } from "react-icons/ai";
 import { IoDocument, IoDocumentTextOutline } from "react-icons/io5";
 import { ImNewspaper } from "react-icons/im";
 import { FaBriefcase } from "react-icons/fa6";
+import { LogOutIcon } from "lucide-react";
 
 const SidebarNav: React.FC = () => {
   const router = useRouter();
@@ -82,6 +83,11 @@ const SidebarNav: React.FC = () => {
     //   href: "/users",
     //   icon: <HiUsers size={25} />,
     // },
+    {
+      label: "Paramètres",
+      href: "/settings",
+      icon: <MdSettings size={25} />,
+    },
   ];
 
   const [toggled, setToggled] = React.useState(false);
@@ -239,7 +245,7 @@ const SidebarNav: React.FC = () => {
               ))}
             </div>
 
-            <div className="others">
+            {/* <div className="others">
               <MenuItem
                 title={"Paramètres"}
                 icon={<MdSettings />}
@@ -254,6 +260,17 @@ const SidebarNav: React.FC = () => {
                 onClick={() => router.push("/settings")}
               >
                 {"Paramètres"}
+              </MenuItem>
+            </div> */}
+
+            <div className="logout">
+              <MenuItem
+                title={"Se déconnecter"}
+                icon={<LogOutIcon />}
+                // className="hover:text-[#FC7702] hover:bg-white"
+                onClick={() => router.push("/logout")}
+              >
+                {"Se déconnecter"}
               </MenuItem>
             </div>
           </div>
