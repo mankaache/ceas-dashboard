@@ -3,6 +3,7 @@ const DATA_MAP = {
   documents: "documents",
   photos: "photos",
   videos: "videos",
+  alumini:"alumni",
   events: "événements",
   "training-programs": "programmes de formation",
 };

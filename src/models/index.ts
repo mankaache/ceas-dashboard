@@ -14,4 +14,5 @@ export type ICategoryType =
   | "documents"
   | "articles"
   | "events"
+  | "alumini"
   | "training-programs";
