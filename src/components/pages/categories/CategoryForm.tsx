@@ -49,14 +49,14 @@ import { CONSTANTS } from "@/data";
 
 const categorySchema = z.object({
   category: z
-    .string({ message: "Category is required" })
-    .min(1, "Category should be atleast 1 character"),
+    .string({ message: "La catégorie est obligatoire" })
+    .min(1, "La catégorie doit contenir au moins 1 caractère"),
   label: z
-    .string({ message: "Title is required" })
-    .min(1, "Title should be atleast 1 character"),
+    .string({ message: "Le titre est requis" })
+    .min(1, "Le titre doit contenir au moins 1 caractère"),
   value: z
-    .string({ message: "Description is required" })
-    .min(1, "Description should be atleast 1 character"),
+    .string({ message: "Une description est requise" })
+    .min(1, "La description doit comporter au moins 1 caractère"),
 });
 
 // Category Form Component

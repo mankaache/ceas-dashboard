@@ -26,7 +26,7 @@ import { useScreenSize } from "@/hooks";
 import { SiReadthedocs } from "react-icons/si";
 import Image from "next/image";
 import { commonImages } from "@/assets";
-import { AiOutlineClose } from "react-icons/ai";
+import { AiOutlineClose, AiOutlineTeam } from "react-icons/ai";
 import { IoDocument, IoDocumentTextOutline } from "react-icons/io5";
 import { ImNewspaper } from "react-icons/im";
 import { FaBriefcase } from "react-icons/fa6";
@@ -64,6 +64,11 @@ const SidebarNav: React.FC = () => {
       label: "videos",
       href: "/videos",
       icon: <MdOutlineVideoCameraBack size={25} />,
+    },
+    {
+      label: "Alumni",
+      href: "/alumini",
+      icon: <AiOutlineTeam size={25} />,
     },
     {
       label: "événements",

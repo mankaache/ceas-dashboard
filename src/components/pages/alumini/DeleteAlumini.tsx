@@ -1,0 +1,88 @@
+import { Copy } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { MdDelete } from "react-icons/md";
+import { IAlumini } from "@/models";
+import { QueryDocumentSnapshot, deleteDoc, doc } from "firebase/firestore";
+import { firestore } from "@/firebase/config";
+import Swal from "sweetalert2";
+import { getError } from "@/utils";
+
+export function DeleteAlumini({
+    alumini,
+}: {
+    alumini: QueryDocumentSnapshot<IAlumini>;
+}) {
+  const handleDelete = async () => {
+    try {
+      Swal.fire("S'il vous plaît, attendez...");
+      Swal.showLoading(Swal.getConfirmButton());
+
+      await deleteDoc(doc(firestore, "alumini", alumini.id));
+
+      const swalRes = await Swal.fire({
+        title: "Succès!",
+        // text: result.message ?? "You're logged in!",
+        icon: "success",
+        confirmButtonText: "Continuer",
+      });
+
+      // if (swalRes.value) {
+      //   onSave();
+      // }
+    } catch (err) {
+      Swal.fire({
+        title: "Une erreur s'est produite!",
+        html: getError("html", err),
+        icon: "error",
+        confirmButtonText: "Fermer",
+      });
+    }
+  };
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button size="icon" variant="destructive" className="cursor-pointer">
+          <MdDelete className="h-5 w-5" />
+          <span className="sr-only">Supprimer</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            <div className="text-2xl">Supprimer Alumni</div>
+          </DialogTitle>
+        </DialogHeader>
+        <div className="flex items-center space-x-2">
+          <p>Etes-vous sûr de vouloir supprimer cet Alumni?</p>
+        </div>
+        <DialogFooter className="sm:justify-start">
+          <div className="flex gap-4">
+            <DialogClose asChild>
+              <Button type="button" variant="secondary">
+                Annuler
+              </Button>
+            </DialogClose>
+
+            <Button type="button" variant="destructive" onClick={handleDelete}>
+              Continuer
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
