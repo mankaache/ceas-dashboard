@@ -90,54 +90,54 @@ interface ITag {
 const mdParser = new MarkdownIt(/* Markdown-it options */);
 
 const imageSchema = z.object({
-  src: z.string().url({ message: "Invalid URL" }),
+  src: z.string().url({ message: "lien Invalid " }),
   caption: z
     .string()
-    .min(1, { message: "Caption should be at least 1 character" }),
+    .min(1, { message: "La légende doit comporter au moins 1 caractère" }),
 });
 
 const tagSchema = z.object({
-  id: z.string().min(1, { message: "Tag should be at least 1 character" }),
-  text: z.string().min(1, { message: "Tag should be at least 1 character" }),
+  id: z.string().min(1, { message: "La balise doit contenir au moins 1 caractère" }),
+  text: z.string().min(1, { message: "La balise doit contenir au moins 1 caractère" }),
 });
 
 const authorSchema = z.object({
   name: z
-    .string({ message: "Author name required" })
-    .min(1, { message: "Name be at least 1 character" }),
+    .string({ message: "Nom de l'auteur requis" })
+    .min(1, { message: "Le nom doit comporter au moins 1 caractère" }),
 });
 
 const articleSchema = z
   .object({
     image: imageSchema,
     title: z
-      .string({ message: "Title is required" })
-      .min(1, "Title should be atleast 1 character"),
+      .string({ message: "Le titre est requis" })
+      .min(1, "Le titre doit contenir au moins 1 caractère"),
     excerpt: z
-      .string({ message: "Excerpt is required" })
-      .min(1, "Excerpt should be atleast 1 character"),
+      .string({ message: "Un extrait est requis" })
+      .min(1, "L'extrait doit contenir au moins 1 caractère"),
     slug: z
-      .string({ message: "Slug is required" })
-      .min(1, "Slug should be atleast 1 character"),
+      .string({ message: "Le slug est obligatoire" })
+      .min(1, "Slug doit contenir au moins 1 caractère"),
 
     content: z
-      .string({ message: "Content is required" })
-      .min(1, "Content should be atleast 1 character"),
+      .string({ message: "Le contenu est requis" })
+      .min(1, "Le contenu doit comporter au moins 1 caractère"),
     tags: z.array(tagSchema), // Define tags as an array of strings
     author: authorSchema,
     category: z.string().optional(),
     custom_category: z.string().optional(),
   })
   .refine((data) => data.slug.toLowerCase() === data.slug, {
-    message: "Slug should be lowercase",
+    message: "Slug doit être en minuscule",
     path: ["slug"], // This indicates where the error message will be displayed
   })
   .refine((data) => data.category || data.custom_category, {
-    message: "Either Category or Custom Category is required",
+    message: "Une catégorie ou une catégorie personnalisée est requise",
     path: ["category"], // This indicates where the error message will be displayed
   })
   .refine((data) => !(data.category && data.custom_category), {
-    message: "Only one of Category or Custom Category should be provided",
+    message: "Une seule catégorie ou catégorie personnalisée doit être fournie.",
     path: ["category"], // This indicates where the error message will be displayed
   });
 
@@ -277,13 +277,13 @@ export const ArticleForm: React.FC<{
         });
       }
     } else {
-      toast.error("No file present!");
+      toast.error("Aucun fichier présent !");
     }
   };
 
   const onSubmitEdit = async (data: z.infer<typeof articleSchema>) => {
     if (!(article || Boolean(files.length))) {
-      toast.error("No file present!");
+      toast.error("Aucun fichier présent !");
     } else {
       try {
         Swal.fire("S'il vous plaît, attendez...");

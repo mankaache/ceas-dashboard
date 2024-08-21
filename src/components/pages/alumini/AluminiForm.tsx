@@ -27,7 +27,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { IDocument } from "@/models";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -71,11 +70,13 @@ registerPlugin(
   FilePondPluginFileValidateType
 );
 
-const documentSchema = z
+const AluminiSchema = z
   .object({
     src: z
       .string({ message: "Veuillez sélectionner un fichier" })
       .url({ message: "Lien invalide" }),
+    role: z
+    .string({message: 'Le role est requis'}),
     title: z
       .string({ message: "Le titre est requis" })
       .min(1, "Le titre doit contenir au moins 1 caractère"),
@@ -95,25 +96,26 @@ const documentSchema = z
   });
 
 // Document Form Component
-export const DocumentForm: React.FC<{
-  document: QueryDocumentSnapshot | null;
+export const AluminiForm: React.FC<{
+    alumini: QueryDocumentSnapshot | null;
   onCancel: () => void;
   onSave: () => void;
-}> = ({ document, onCancel, onSave }) => {
+}> = ({ alumini, onCancel, onSave }) => {
   const [files, setFiles] = React.useState<File[]>([]);
   const [uploadFile, uploading, upLoadSnapshot, error] = useUploadFile();
-  const [categories, catLoading, catError] = useSubcategories("documents");
+  const [categories, catLoading, catError] = useSubcategories("alumini");
 
-  const form = useForm<z.infer<typeof documentSchema>>({
-    defaultValues: document
+  const form = useForm<z.infer<typeof AluminiSchema>>({
+    defaultValues: alumini
       ? {
-          src: document.data().src,
-          title: document.data().title,
-          description: document.data().description,
-          category: document.data().category,
+          src: alumini.data().src,
+          role: alumini.data().role,
+          title: alumini.data().title,
+          description: alumini.data().description,
+          category: alumini.data().category,
         }
       : {},
-    resolver: zodResolver(documentSchema),
+    resolver: zodResolver(AluminiSchema),
   });
 
   const handleFileChange = (fileItems: any) => {
@@ -145,7 +147,7 @@ export const DocumentForm: React.FC<{
     });
   };
 
-  const onSubmitAdd = async (data: z.infer<typeof documentSchema>) => {
+  const onSubmitAdd = async (data: z.infer<typeof AluminiSchema>) => {
     // console.log(data);
     // console.log(files);
 
@@ -155,7 +157,7 @@ export const DocumentForm: React.FC<{
         Swal.showLoading(Swal.getConfirmButton());
 
         if (data.custom_category) {
-          await addSubcategory("documents", {
+          await addSubcategory("alumini", {
             label: data.custom_category,
             value: data.custom_category,
           });
@@ -163,11 +165,10 @@ export const DocumentForm: React.FC<{
 
         // @ts-ignore
         const url = await handleFileUpload(files[0].file);
-        // const documentRef = doc(collection(firestore, "documents"))
-        const documentRef = collection(firestore, "documents");
+        const documentRef = collection(firestore, "alumini");
         const documentData = {
-          // id: documentRef.id,
           src: url,
+          role: data.role,
           title: data.title,
           description: data.description,
           createdAt: dayjs().toISOString(),
@@ -189,44 +190,48 @@ export const DocumentForm: React.FC<{
           onSave();
         }
       } catch (err) {
+       
         Swal.fire({
           title: "Erreur",
           html: getError("html", err),
           icon: "error",
           confirmButtonText: "Fermer",
         });
+
+        console.log('senderror', err)
       }
     } else {
-      toast.error("No file present!");
+      toast.error("Aucun fichier trouvez");
     }
   };
 
-  const onSubmitEdit = async (data: z.infer<typeof documentSchema>) => {
-    if (!(document || Boolean(files.length))) {
-      toast.error("No file present!");
+  const onSubmitEdit = async (data: z.infer<typeof AluminiSchema>) => {
+    if (!(alumini || Boolean(files.length))) {
+      toast.error("Aucun fichier present!");
     } else {
       try {
         Swal.fire("S'il vous plaît, attendez...");
         Swal.showLoading(Swal.getConfirmButton());
 
         if (data.custom_category) {
-          await addSubcategory("documents", {
+          await addSubcategory("alumini", {
             label: data.custom_category,
             value: data.custom_category,
           });
         }
 
         const url = !Boolean(files.length)
-          ? document?.data().src
+          ? alumini?.data().src
           : // @ts-ignore
             await handleFileUpload(files[0].file);
 
-        const documentRef = doc(firestore, "documents", document!.id);
+        const documentRef = doc(firestore, "alumini", alumini!.id);
         const documentData = {
           src: url,
+          role: data.role,
           title: data.title,
           description: data.description,
-          createdAt: document?.data().createdAt,
+          createdAt: alumini?.data().createdAt,
           modifiedAt: dayjs().toISOString(),
           status: "active",
           category: data.category ?? data.custom_category,
@@ -250,6 +255,8 @@ export const DocumentForm: React.FC<{
           icon: "error",
           confirmButtonText: "Fermer",
         });
+
+        console.log('editerror', err)
       }
     }
   };
@@ -264,7 +271,7 @@ export const DocumentForm: React.FC<{
     >
       <Card className="w-full fade-enter fade-enter-active">
         <CardHeader>
-          <CardTitle>{document ? "Modifier" : "Ajouter un"} document</CardTitle>
+          <CardTitle>{alumini ? "Modifier" : "Ajouter un"} alumni</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -272,7 +279,7 @@ export const DocumentForm: React.FC<{
               noValidate
               onSubmit={form.handleSubmit(
                 // @ts-ignore
-                document ? onSubmitEdit : onSubmitAdd
+                alumini ? onSubmitEdit : onSubmitAdd
               )}
               className="space-y-8"
             >
@@ -281,14 +288,14 @@ export const DocumentForm: React.FC<{
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Document</FormLabel>
+                    <FormLabel>Alumini</FormLabel>
                     <FormControl>
-                      <FilePond
+                    <FilePond
                         files={files}
                         onupdatefiles={handleFileChange}
                         allowMultiple={false}
                         maxFiles={1}
-                        acceptedFileTypes={["application/*", "text/*"]}
+                        acceptedFileTypes={["image/*"]}
                         instantUpload={false}
                         allowProcess={false}
                         // name="file"
@@ -308,7 +315,24 @@ export const DocumentForm: React.FC<{
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Titre</FormLabel>
+                    <FormLabel>Nom</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="text"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                name="role"
+                control={form.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>rôle</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
@@ -397,10 +421,10 @@ export const DocumentForm: React.FC<{
 
               <div className="flex justify-end gap-2">
                 <Button type="button" onClick={onCancel} variant="secondary">
-                  Cancel
+                Annuler
                 </Button>
                 <Button type="submit" variant="default">
-                  Save
+                    Sauvegarder
                 </Button>
               </div>
             </form>

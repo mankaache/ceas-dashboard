@@ -28,6 +28,16 @@ export interface IDocument {
   modifiedAt?: string;
   category: string;
 }
+export interface IAlumini {
+  src: string;
+  role:string;
+  title: string;
+  description: string;
+  status: "active" | "draft";
+  createdAt: string;
+  modifiedAt?: string;
+  category: string;
+}
 
 export interface IArticle {
   slug: string;
