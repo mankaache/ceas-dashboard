@@ -82,6 +82,7 @@ import MdEditor from "react-markdown-editor-lite";
 import "react-markdown-editor-lite/lib/index.css";
 import dynamic from "next/dynamic";
 import { format } from "date-fns";
+import { sluging } from "@/utils/sluging";
 
 registerPlugin(
   FilePondPluginImageExifOrientation,
@@ -260,7 +261,7 @@ export const EventForm: React.FC<{
           },
           title: data.title,
           excerpt: data.excerpt,
-          slug: data.slug,
+          slug: sluging(data.slug),
           content: data.content,
           tags: data.tags,
           // author: data.author,
@@ -325,7 +326,7 @@ export const EventForm: React.FC<{
           },
           title: data.title,
           excerpt: data.excerpt,
-          slug: data.slug,
+          slug: sluging(data.slug),
           content: data.content,
           tags: data.tags,
           // author: data.author,
