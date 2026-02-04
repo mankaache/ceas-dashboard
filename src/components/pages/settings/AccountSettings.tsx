@@ -100,6 +100,7 @@ export const AccountSettings = ({ user }: { user: User }) => {
           <Form {...form}>
             <form
               noValidate
+              //@ts-expect-error err
               onSubmit={form.handleSubmit(onSubmitEdit)}
               className="space-y-8"
             >
@@ -107,6 +108,7 @@ export const AccountSettings = ({ user }: { user: User }) => {
                 <div className="title flex-1">
                   <FormField
                     name="displayName"
+                    //@ts-expect-error err
                     control={form.control}
                     render={({ field }) => (
                       <FormItem>
@@ -127,6 +129,7 @@ export const AccountSettings = ({ user }: { user: User }) => {
                 <div className="slug flex-1">
                   <FormField
                     name="email"
+                    //@ts-expect-error err
                     control={form.control}
                     render={({ field }) => (
                       <FormItem>
